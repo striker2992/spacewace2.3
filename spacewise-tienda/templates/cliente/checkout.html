@@ -1,0 +1,35 @@
+{% extends "base_publico.html" %}
+{% load ui %}
+{% block title %}Confirmar compra · SpaceWise{% endblock %}
+{% block content %}
+<div class="page-title"><div><h1>Confirmar compra</h1><p>Revisa los datos de entrega y contacto.</p></div></div>
+
+<div class="checkout-grid">
+  <form method="post" class="card" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert-form">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="two-cols">
+      {% for field in form %}
+      <div class="field{% if field.name == 'direccion_entrega' or field.name == 'notas' or field.name == 'metodo_contacto' %} full{% endif %}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+        {{ field.errors }}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" type="submit">Confirmar pedido</button>
+      <a class="btn" href="{% url 'tienda:carrito' %}">Volver al carrito</a>
+    </div>
+  </form>
+
+  <aside class="card summary">
+    <h2>Tu pedido</h2>
+    {% for i in items %}
+    <div class="line"><span>{{ i.cantidad }} × {{ i.contenedor.nombre }}</span><span>${{ i.subtotal|floatformat:"0g" }}</span></div>
+    {% endfor %}
+    <div class="line total"><span>Total</span><span>${{ total|floatformat:"0g" }}</span></div>
+  </aside>
+</div>
+{% endblock %}

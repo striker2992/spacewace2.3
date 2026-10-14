@@ -1,0 +1,16 @@
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>CONTENEDOR</th><th class="num">CANTIDAD</th><th class="num">PRECIO UNIT.</th><th class="num">SUBTOTAL</th></tr></thead>
+    <tbody>
+    {% for i in pedido.items.all %}
+      <tr>
+        <td>{{ i.contenedor.nombre }} <small class="muted">· {{ i.contenedor.get_tipo_display }}</small></td>
+        <td class="num">{{ i.cantidad }}</td>
+        <td class="num">${{ i.precio_unitario|floatformat:"0g" }}</td>
+        <td class="num">${{ i.subtotal|floatformat:"0g" }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="total-row"><span class="muted">Total</span> <strong>${{ pedido.total|floatformat:"0g" }}</strong></div>

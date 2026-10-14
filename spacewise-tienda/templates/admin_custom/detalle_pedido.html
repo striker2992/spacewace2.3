@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}{{ pedido.numero_pedido }} · SpaceWise{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="{% url 'vendedores:pedidos' %}">Pedidos web</a> &rsaquo; {{ pedido.numero_pedido }}</div>
+<div class="page-title">
+  <div>
+    <h1>{{ pedido.numero_pedido }} <span class="badge {{ pedido.badge }}" style="vertical-align:middle">{{ pedido.get_estado_display }}</span></h1>
+    <p>{{ pedido.fecha_creacion|date:"d/m/Y H:i" }} · <a href="{{ pedido.cliente.get_absolute_url }}">{{ pedido.cliente.nombre }}</a></p>
+  </div>
+  <div class="actions">
+    {% for valor, etiqueta in pedido.estados_siguientes %}
+    <form class="inline" method="post" action="{% url 'vendedores:pedido_estado' pedido.pk %}"
+          {% if valor == "cancelado" %}onsubmit="return confirm('¿Cancelar el pedido? Los contenedores vuelven al stock y no se puede reabrir.')"{% endif %}>
+      {% csrf_token %}
+      <input type="hidden" name="estado" value="{{ valor }}">
+      <button class="btn {% if valor == 'cancelado' %}btn-danger{% else %}btn-primary{% endif %}" type="submit">
+        {% if valor == "cancelado" %}{% icon "x" %} Cancelar pedido{% else %}{% icon "check" %} Pasar a {{ etiqueta|lower }}{% endif %}
+      </button>
+    </form>
+    {% endfor %}
+  </div>
+</div>
+
+<section class="card">{% include "cliente/_flujo_pedido.html" %}</section>
+
+<section class="card">
+  <h2>Contenedores</h2>
+  {% include "cliente/_items_pedido.html" %}
+</section>
+
+<div class="grid-2">
+  <section class="card">
+    <h2>Cliente</h2>
+    <p style="margin:0 0 6px"><b>{{ pedido.cliente.nombre }}</b></p>
+    {% if pedido.cliente.razon_social %}<p style="margin:0 0 6px">{{ pedido.cliente.razon_social }}</p>{% endif %}
+    <p class="muted" style="margin:0">RUT: {{ pedido.cliente.rut|default:"—" }}<br>{{ pedido.cliente.email|default:"Sin correo" }}</p>
+  </section>
+  <section class="card">
+    <h2>Entrega y contacto</h2>
+    <p style="margin:0 0 6px"><b>Dirección:</b> {{ pedido.direccion_entrega }}</p>
+    <p style="margin:0 0 6px"><b>Contactar por:</b> {{ pedido.get_metodo_contacto_display }} · {{ pedido.telefono_contacto }}</p>
+    {% if pedido.notas %}<p style="margin:0"><b>Notas del cliente:</b> {{ pedido.notas }}</p>{% endif %}
+  </section>
+</div>
+{% endblock %}

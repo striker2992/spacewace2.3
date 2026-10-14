@@ -1,0 +1,21 @@
+{% extends "base_publico.html" %}
+{% load ui %}
+{% block title %}Pedido {{ pedido.numero_pedido }} · SpaceWise{% endblock %}
+{% block content %}
+<section class="card" style="display:grid;gap:14px;justify-items:start">
+  <span class="success-mark">{% icon "check" %}</span>
+  <div>
+    <h1 style="margin:0 0 6px;font-size:22px">Recibimos tu pedido {{ pedido.numero_pedido }}</h1>
+    <p class="muted" style="margin:0">Nuestro equipo lo revisará y te contactará por {{ pedido.get_metodo_contacto_display|lower }} al {{ pedido.telefono_contacto }}.</p>
+  </div>
+  <div class="actions">
+    <a class="btn btn-primary" href="{% url 'tienda:mis_pedidos' %}">Ver mis pedidos</a>
+    <a class="btn" href="{% url 'catalogo' %}">Seguir comprando</a>
+  </div>
+</section>
+<section class="card">
+  <h2>Detalle</h2>
+  {% include "cliente/_items_pedido.html" %}
+  <p class="muted" style="margin:14px 0 0"><b>Entrega en:</b> {{ pedido.direccion_entrega }}</p>
+</section>
+{% endblock %}

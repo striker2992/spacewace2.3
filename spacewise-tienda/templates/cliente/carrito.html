@@ -1,0 +1,67 @@
+{% extends "base_publico.html" %}
+{% load ui %}
+{% block title %}Tu carrito · SpaceWise{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div><h1>Tu carrito</h1><p>Revisa las cantidades antes de comprar.</p></div>
+  <a class="btn" href="{% url 'catalogo' %}">Seguir viendo contenedores</a>
+</div>
+
+{% if items %}
+<div class="cart-layout">
+  <section class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>CONTENEDOR</th><th class="num">PRECIO</th><th>CANTIDAD</th><th class="num">SUBTOTAL</th><th></th></tr></thead>
+        <tbody>
+        {% for i in items %}
+          <tr>
+            <td>
+              <div class="cart-item">
+                <span class="cart-thumb">{% if i.contenedor.imagen %}<img src="{{ i.contenedor.imagen.url }}" alt="">{% endif %}</span>
+                <div>
+                  <a href="{{ i.contenedor.get_absolute_url }}"><b>{{ i.contenedor.nombre }}</b></a><br>
+                  <small class="muted">{{ i.contenedor.get_tipo_display }} · {{ i.contenedor.get_condicion_display }}</small>
+                  {% if i.cantidad > i.contenedor.stock %}<br><small style="color:var(--bad)">Solo quedan {{ i.contenedor.stock }}</small>{% endif %}
+                </div>
+              </div>
+            </td>
+            <td class="num">${{ i.precio_unitario|floatformat:"0g" }}</td>
+            <td>
+              <form class="qty-form" method="post" action="{% url 'tienda:actualizar' i.pk %}">
+                {% csrf_token %}
+                <input type="number" name="cantidad" value="{{ i.cantidad }}" min="0" max="{{ i.contenedor.stock }}" aria-label="Cantidad de {{ i.contenedor.nombre }}">
+                <button class="btn btn-sm" type="submit">Actualizar</button>
+              </form>
+            </td>
+            <td class="num"><b>${{ i.subtotal|floatformat:"0g" }}</b></td>
+            <td class="num">
+              <form class="inline" method="post" action="{% url 'tienda:eliminar_item' i.pk %}">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-danger" type="submit" aria-label="Quitar {{ i.contenedor.nombre }}">{% icon "trash" %}</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <aside class="card summary">
+    <h2>Resumen</h2>
+    <div class="line"><span class="muted">Subtotal</span><span>${{ subtotal|floatformat:"0g" }}</span></div>
+    <div class="line total"><span>Total</span><span>${{ total|floatformat:"0g" }}</span></div>
+    <a class="btn btn-primary" href="{% url 'tienda:checkout' %}">Procesar compra</a>
+    {% if not user.is_authenticated %}
+    <p class="muted" style="font-size:12px;margin:12px 0 0">Para terminar la compra te pediremos iniciar sesión o crear una cuenta. Tu carrito se conserva.</p>
+    {% endif %}
+  </aside>
+</div>
+{% else %}
+<section class="card empty">
+  <p style="margin:0 0 14px">Tu carrito está vacío.</p>
+  <a class="btn btn-primary" href="{% url 'catalogo' %}">Ver catálogo</a>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends "base_publico.html" %}
+{% load ui %}
+{% block title %}Catálogo de contenedores · SpaceWise{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div>
+    <h1>Catálogo de contenedores</h1>
+    <p>Elige el contenedor que necesitas, agrégalo al carrito y compra cuando estés listo.</p>
+  </div>
+  {% if es_personal %}<a class="btn" href="{% url 'admin:contenedores_contenedor_changelist' %}">{% icon "settings" %} Administrar contenedores</a>{% endif %}
+</div>
+
+<section class="card">
+  <form method="get" class="filters" role="search" aria-label="Filtros del catálogo">
+    <div class="field">
+      <label for="f-q">Buscar</label>
+      <input id="f-q" type="search" name="q" value="{{ q }}" placeholder="Nombre o descripción">
+    </div>
+    <div class="field">
+      <label for="f-tipo">Tipo</label>
+      <select id="f-tipo" name="tipo">
+        <option value="">Todos</option>
+        {% for value, label in tipos %}<option value="{{ value }}" {% if value == tipo %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="f-tamano">Tamaño</label>
+      <select id="f-tamano" name="tamano">
+        <option value="">Todos</option>
+        {% for value, label in tamanos %}<option value="{{ value }}" {% if value == tamano %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="f-cond">Estado</label>
+      <select id="f-cond" name="condicion">
+        <option value="">Nuevo y usado</option>
+        {% for value, label in condiciones %}<option value="{{ value }}" {% if value == condicion %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="f-pmin">Precio desde</label>
+      <input id="f-pmin" type="number" name="precio_min" value="{{ precio_min }}" min="0" step="1" placeholder="$ mínimo">
+    </div>
+    <div class="field">
+      <label for="f-pmax">Precio hasta</label>
+      <input id="f-pmax" type="number" name="precio_max" value="{{ precio_max }}" min="0" step="1" placeholder="$ máximo">
+    </div>
+    <label class="check"><input type="checkbox" name="disponibles" value="1" {% if solo_disponibles %}checked{% endif %}> Solo con stock</label>
+    <div class="actions">
+      <button class="btn btn-primary" type="submit">Filtrar</button>
+      {% if hay_filtros %}<a class="btn" href="{% url 'catalogo' %}">Limpiar</a>{% endif %}
+    </div>
+  </form>
+</section>
+
+<p class="result-count">{{ paginator.count }} contenedor{{ paginator.count|pluralize:"es" }} encontrado{{ paginator.count|pluralize }}</p>
+
+<div class="cat-grid">
+  {% for c in contenedores %}
+  <article class="prod">
+    <a class="prod-img tipo-{{ c.tipo }}" href="{{ c.get_absolute_url }}" aria-label="Ver {{ c.nombre }}">
+      {% if c.imagen %}<img src="{{ c.imagen.url }}" alt="{{ c.nombre }}" loading="lazy">{% else %}<span>{{ c.get_tipo_display }}</span>{% endif %}
+    </a>
+    <div class="prod-body">
+      <div class="prod-meta">
+        <span class="badge info">{{ c.get_tipo_display }}</span>
+        <span class="badge">{{ c.get_condicion_display }}</span>
+        {% if c.disponible %}<span class="badge ok">{{ c.stock }} en stock</span>{% else %}<span class="badge bad">Sin stock</span>{% endif %}
+      </div>
+      <h3><a href="{{ c.get_absolute_url }}">{{ c.nombre }}</a></h3>
+      {% if c.descripcion %}<p class="prod-desc">{{ c.descripcion }}</p>{% endif %}
+      <div class="prod-price">${{ c.precio|floatformat:"0g" }} <small>por unidad</small></div>
+      <div class="prod-foot">
+        <form method="post" action="{% url 'tienda:agregar' c.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <button class="btn btn-primary" type="submit" {% if not c.disponible %}disabled{% endif %}>{% icon "cart" %} Agregar al carrito</button>
+        </form>
+      </div>
+    </div>
+  </article>
+  {% empty %}
+  <div class="card empty" style="grid-column:1/-1">
+    No hay contenedores con esos filtros. {% if hay_filtros %}<a href="{% url 'catalogo' %}">Quitar filtros</a>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% include "_pagination.html" %}
+{% endblock %}

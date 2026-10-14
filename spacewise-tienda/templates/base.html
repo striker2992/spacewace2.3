@@ -1,0 +1,64 @@
+{% load static ui %}<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}SpaceWise{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+{% with ns=request.resolver_match.namespace url=request.resolver_match.url_name %}
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><span class="logo">{% icon "box" %}</span> SpaceWise</div>
+    <nav class="nav">
+      <a href="{% url 'dashboard' %}" class="{% if url == 'dashboard' %}active{% endif %}">{% icon "home" %} Dashboard</a>
+      <a href="{% url 'clientes:lista' %}" class="{% if ns == 'clientes' %}active{% endif %}">{% icon "users" %} Clientes</a>
+      <a href="{% url 'cotizaciones:lista' %}" class="{% if ns == 'cotizaciones' %}active{% endif %}">{% icon "file-text" %} Cotizaciones</a>
+      <a href="{% url 'catalogo' %}" class="{% if url == 'catalogo' %}active{% endif %}">{% icon "box" %} Catálogo</a>
+      <a href="{% url 'operaciones:lista' %}" class="{% if ns == 'operaciones' %}active{% endif %}">{% icon "cart" %} Compras</a>
+      <a href="{% url 'contenedores:lista' %}" class="{% if ns == 'contenedores' %}active{% endif %}">{% icon "box" %} Contenedores</a>
+      <a href="{% url 'vendedores:pedidos' %}" class="{% if url == 'pedidos' or url == 'detalle_pedido' %}active{% endif %}">{% icon "clipboard" %} Pedidos web{% if pedidos_pendientes %}<span class="nav-badge" title="Pedidos pendientes">{{ pedidos_pendientes }}</span>{% endif %}</a>
+      <a href="{% url 'vendedores:lista' %}" class="{% if ns == 'vendedores' and url != 'pedidos' and url != 'detalle_pedido' %}active{% endif %}">{% icon "trend" %} Vendedores</a>
+      <hr>
+      <span class="disabled" title="Próximamente">{% icon "pie" %} Reportes</span>
+      <span class="disabled" title="Próximamente">{% icon "settings" %} Configuración</span>
+      <span class="disabled" title="Próximamente">{% icon "help" %} Ayuda</span>
+    </nav>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn" id="toggle-nav" type="button" aria-label="Mostrar u ocultar menú">{% icon "menu" %}</button>
+      <form class="search" method="get" action="{% url 'clientes:lista' %}" role="search">
+        {% icon "search" %}
+        <input type="search" name="q" placeholder="Buscar clientes..." aria-label="Buscar clientes">
+      </form>
+      <div class="spacer"></div>
+      <div class="user">
+        <span class="avatar">{% icon "user" %}</span>
+        <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
+        <form method="post" action="{% url 'logout' %}" class="inline">
+          {% csrf_token %}
+          <button class="link-btn" type="submit">Salir</button>
+        </form>
+      </div>
+    </header>
+    <main class="content">
+      <div class="container">
+        {% if messages %}
+        <ul class="messages">
+          {% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  </div>
+</div>
+{% endwith %}
+<script src="{% static 'js/app.js' %}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

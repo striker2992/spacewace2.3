@@ -1,0 +1,40 @@
+{% load static ui %}<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Crear cuenta · SpaceWise</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+<div class="login">
+  <section class="login-hero">
+    <div class="login-logo">{% icon "box" %}</div>
+    <h1>Crea tu cuenta</h1>
+    <p>Compra contenedores y sigue el estado de tus pedidos en un solo lugar.</p>
+  </section>
+  <section class="login-form scroll">
+    <form class="login-box" method="post" novalidate style="width:min(460px,86vw)">
+      {% csrf_token %}
+      <h2>Crear cuenta</h2>
+      <p class="muted" style="margin:0 0 20px;font-size:12px">Usaremos estos datos para tus compras y la facturación.</p>
+      {% if form.non_field_errors %}<div class="alert-form">{{ form.non_field_errors.0 }}</div>{% endif %}
+      <input type="hidden" name="next" value="{{ next }}">
+      <div class="two-cols">
+        {% for field in form %}
+        <div class="field{% if field.name == 'username' or field.name == 'email' or field.name == 'direccion' or field.name == 'razon_social' %} full{% endif %}">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}<div class="help">{{ field.help_text|safe }}</div>{% endif %}
+          {{ field.errors }}
+        </div>
+        {% endfor %}
+      </div>
+      <button class="btn btn-accent" type="submit">Crear cuenta y continuar</button>
+      <p class="muted" style="text-align:center;font-size:12px;margin-top:20px">¿Ya tienes cuenta? <a href="{% url 'login' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Iniciar sesión</a></p>
+    </form>
+  </section>
+</div>
+</body>
+</html>

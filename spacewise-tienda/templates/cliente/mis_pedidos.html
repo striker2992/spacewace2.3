@@ -1,0 +1,26 @@
+{% extends "base_publico.html" %}
+{% block title %}Mis pedidos · SpaceWise{% endblock %}
+{% block content %}
+<div class="page-title"><div><h1>Mis pedidos</h1><p>Historial y estado de tus compras.</p></div></div>
+<section class="card">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>PEDIDO</th><th>FECHA</th><th class="num">TOTAL</th><th>ESTADO</th><th></th></tr></thead>
+      <tbody>
+      {% for p in pedidos %}
+        <tr>
+          <td><a href="{{ p.get_absolute_url }}"><b>{{ p.numero_pedido }}</b></a></td>
+          <td>{{ p.fecha_creacion|date:"d/m/Y H:i" }}</td>
+          <td class="num">${{ p.total|floatformat:"0g" }}</td>
+          <td><span class="badge {{ p.badge }}">{{ p.get_estado_display }}</span></td>
+          <td class="num"><a class="btn btn-sm" href="{{ p.get_absolute_url }}">Ver detalle</a></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5" class="empty">Aún no tienes pedidos. <a href="{% url 'catalogo' %}">Explora el catálogo</a>.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "_pagination.html" %}
+</section>
+{% endblock %}

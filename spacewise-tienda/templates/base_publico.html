@@ -1,0 +1,53 @@
+{% load static ui %}<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}SpaceWise{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+{% with url=request.resolver_match.url_name %}
+<header class="pub-header">
+  <div class="pub-bar">
+    <a class="brand" href="{% url 'catalogo' %}"><span class="logo">{% icon "box" %}</span> SpaceWise</a>
+    <nav class="pub-nav" aria-label="Principal">
+      <a href="{% url 'catalogo' %}" class="{% if url == 'catalogo' or url == 'detalle_contenedor' %}active{% endif %}">Catálogo</a>
+      {% if user.is_authenticated and not es_personal %}
+      <a href="{% url 'tienda:mis_pedidos' %}" class="{% if url == 'mis_pedidos' or url == 'detalle_pedido' %}active{% endif %}">Mis pedidos</a>
+      {% endif %}
+      {% if es_personal %}<a href="{% url 'admin:index' %}">Administración</a>{% endif %}
+    </nav>
+    <div class="pub-actions">
+      <a class="cart-link" href="{% url 'tienda:carrito' %}" aria-label="Carrito, {{ carrito_cantidad }} producto(s)">
+        {% icon "cart" %} Carrito
+        {% if carrito_cantidad %}<span class="cart-count">{{ carrito_cantidad }}</span>{% endif %}
+      </a>
+      {% if user.is_authenticated %}
+        <strong>{{ user.get_full_name|default:user.username }}</strong>
+        <form method="post" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button class="link-btn" type="submit">Salir</button>
+        </form>
+      {% else %}
+        <a class="btn btn-sm" href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}">Ingresar</a>
+        <a class="btn btn-sm btn-primary" href="{% url 'registro' %}?next={{ request.get_full_path|urlencode }}">Crear cuenta</a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+<main class="pub-main">
+  {% if messages %}
+  <ul class="messages">
+    {% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+  {% block content %}{% endblock %}
+</main>
+<footer class="pub-footer">SpaceWise · Venta de contenedores</footer>
+{% endwith %}
+{% block extra_js %}{% endblock %}
+</body>
+</html>

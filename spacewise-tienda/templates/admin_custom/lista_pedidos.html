@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Pedidos web · SpaceWise{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div><h1>Pedidos web</h1><p>Compras confirmadas por los clientes desde la tienda.</p></div>
+  <a class="btn" href="{% url 'admin:cotizaciones_pedido_changelist' %}">{% icon "settings" %} Abrir en Django Admin</a>
+</div>
+<section class="card">
+  <div class="toolbar">
+    <form method="get">
+      <input type="search" name="q" value="{{ q }}" placeholder="N.º de pedido, cliente o RUT" aria-label="Buscar">
+      <select name="estado" onchange="this.form.submit()" aria-label="Filtrar por estado">
+        <option value="">Todos los estados</option>
+        {% for value, label in estados %}<option value="{{ value }}" {% if value == estado %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+      <label class="muted" style="font-size:12px">Desde <input type="date" name="desde" value="{{ desde }}"></label>
+      <label class="muted" style="font-size:12px">Hasta <input type="date" name="hasta" value="{{ hasta }}"></label>
+      <button class="btn" type="submit">Filtrar</button>
+      {% if q or estado or desde or hasta %}<a class="btn" href="{% url 'vendedores:pedidos' %}">Limpiar</a>{% endif %}
+    </form>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>PEDIDO</th><th>CLIENTE</th><th>FECHA</th><th class="num">TOTAL</th><th>ESTADO</th><th class="num">ACCIONES</th></tr></thead>
+      <tbody>
+      {% for p in pedidos %}
+        <tr>
+          <td><a href="{% url 'vendedores:detalle_pedido' p.pk %}"><b>{{ p.numero_pedido }}</b></a></td>
+          <td>{{ p.cliente.nombre }}{% if p.cliente.razon_social %}<br><small class="muted">{{ p.cliente.razon_social }}</small>{% endif %}</td>
+          <td>{{ p.fecha_creacion|date:"d/m/Y H:i" }}</td>
+          <td class="num">${{ p.total|floatformat:"0g" }}</td>
+          <td><span class="badge {{ p.badge }}">{{ p.get_estado_display }}</span></td>
+          <td class="num"><a class="btn btn-sm" href="{% url 'vendedores:detalle_pedido' p.pk %}">Revisar</a></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6" class="empty">No hay pedidos que coincidan.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "_pagination.html" %}
+</section>
+{% endblock %}

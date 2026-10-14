@@ -1,0 +1,46 @@
+{% load static ui %}<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Iniciar sesión · SpaceWise</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+<div class="login">
+  <section class="login-hero">
+    <div class="login-logo">{% icon "box" %}</div>
+    <h1>Bienvenido a SpaceWise</h1>
+    <p>La plataforma inteligente para la gestión, cotización y seguimiento de contenedores.</p>
+  </section>
+  <section class="login-form">
+    <form class="login-box" method="post" novalidate>
+      {% csrf_token %}
+      <h2>Iniciar sesión</h2>
+      <p class="muted" style="margin:0 0 24px;font-size:12px">Ingresa tus credenciales para acceder a tu panel.</p>
+
+      {% if form.non_field_errors %}<div class="alert-form">{{ form.non_field_errors.0 }}</div>{% endif %}
+
+      <div class="field">
+        <label for="{{ form.username.id_for_label }}">Nombre de usuario</label>
+        <div class="input-icon">
+          {% icon "user" %}
+          <input type="text" name="username" id="{{ form.username.id_for_label }}" placeholder="Tu usuario" autocomplete="username" autofocus required value="{{ form.username.value|default:'' }}">
+        </div>
+      </div>
+      <div class="field">
+        <label for="{{ form.password.id_for_label }}">Contraseña</label>
+        <div class="input-icon">
+          {% icon "lock" %}
+          <input type="password" name="password" id="{{ form.password.id_for_label }}" placeholder="••••••••" autocomplete="current-password" required>
+        </div>
+      </div>
+      <input type="hidden" name="next" value="{{ next }}">
+      <button class="btn btn-accent" type="submit">Ingresar a mi cuenta</button>
+      <p class="muted" style="text-align:center;font-size:12px;margin-top:22px">¿Eres cliente nuevo? <a href="{% url 'registro' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Crear una cuenta</a> · <a href="{% url 'catalogo' %}">Ver catálogo</a></p>
+    </form>
+  </section>
+</div>
+</body>
+</html>

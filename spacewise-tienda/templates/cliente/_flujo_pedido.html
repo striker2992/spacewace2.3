@@ -1,0 +1,10 @@
+{# Avance del pedido. Solo se muestra si no está cancelado. #}
+{% if pedido.estado == "cancelado" %}
+  <span class="badge bad">Pedido cancelado</span>
+{% else %}
+  <ol class="order-flow" aria-label="Avance del pedido">
+    {% for clave, etiqueta, hecho in pedido.flujo %}
+    <li class="{% if hecho == 'current' %}current{% elif hecho == 'done' %}done{% endif %}">{{ etiqueta }}</li>
+    {% endfor %}
+  </ol>
+{% endif %}

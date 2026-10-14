@@ -1,0 +1,42 @@
+{% extends "base_publico.html" %}
+{% load ui %}
+{% block title %}{{ contenedor.nombre }} · SpaceWise{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="{% url 'catalogo' %}">Catálogo</a> &rsaquo; {{ contenedor.nombre }}</div>
+<div class="detail-grid">
+  <div class="prod-img tipo-{{ contenedor.tipo }}">
+    {% if contenedor.imagen %}<img src="{{ contenedor.imagen.url }}" alt="{{ contenedor.nombre }}">{% else %}<span>{{ contenedor.get_tipo_display }}</span>{% endif %}
+  </div>
+  <div style="display:grid;gap:16px">
+    <div>
+      <div class="prod-meta" style="margin-bottom:8px">
+        <span class="badge info">{{ contenedor.get_tipo_display }}</span>
+        <span class="badge">{{ contenedor.get_condicion_display }}</span>
+        {% if contenedor.disponible %}<span class="badge ok">{{ contenedor.stock }} en stock</span>{% else %}<span class="badge bad">Sin stock</span>{% endif %}
+      </div>
+      <h1 style="margin:0 0 8px;font-size:24px">{{ contenedor.nombre }}</h1>
+      <div class="prod-price" style="margin:0">${{ contenedor.precio|floatformat:"0g" }} <small>por unidad</small></div>
+    </div>
+    {% if contenedor.descripcion %}<p style="margin:0;line-height:1.55;color:#374151">{{ contenedor.descripcion|linebreaksbr }}</p>{% endif %}
+
+    <div class="buy-row">
+      <form method="post" action="{% url 'tienda:agregar' contenedor.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <input class="qty" type="number" name="cantidad" value="1" min="1" max="{{ contenedor.stock }}" aria-label="Cantidad" {% if not contenedor.disponible %}disabled{% endif %}>
+        <button class="btn btn-primary" type="submit" {% if not contenedor.disponible %}disabled{% endif %}>{% icon "cart" %} Agregar al carrito</button>
+      </form>
+    </div>
+
+    <section class="card">
+      <h2>Ficha técnica</h2>
+      <ul class="spec-list">
+        <li><b>Tipo:</b> {{ contenedor.get_tipo_display }}</li>
+        <li><b>Estado:</b> {{ contenedor.get_condicion_display }}</li>
+        {% if contenedor.ubicacion %}<li><b>Ubicación:</b> {{ contenedor.ubicacion }}</li>{% endif %}
+        {% for linea in contenedor.lista_especificaciones %}<li>{{ linea }}</li>{% endfor %}
+      </ul>
+    </section>
+  </div>
+</div>
+{% endblock %}

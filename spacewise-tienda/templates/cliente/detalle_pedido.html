@@ -1,0 +1,22 @@
+{% extends "base_publico.html" %}
+{% block title %}Pedido {{ pedido.numero_pedido }} · SpaceWise{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="{% url 'tienda:mis_pedidos' %}">Mis pedidos</a> &rsaquo; {{ pedido.numero_pedido }}</div>
+<div class="page-title">
+  <div>
+    <h1>{{ pedido.numero_pedido }} <span class="badge {{ pedido.badge }}" style="vertical-align:middle">{{ pedido.get_estado_display }}</span></h1>
+    <p>Realizado el {{ pedido.fecha_creacion|date:"d/m/Y H:i" }}</p>
+  </div>
+</div>
+<section class="card">{% include "cliente/_flujo_pedido.html" %}</section>
+<section class="card">
+  <h2>Contenedores</h2>
+  {% include "cliente/_items_pedido.html" %}
+</section>
+<section class="card">
+  <h2>Entrega y contacto</h2>
+  <p style="margin:0 0 6px"><b>Dirección:</b> {{ pedido.direccion_entrega }}</p>
+  <p style="margin:0 0 6px"><b>Contacto:</b> {{ pedido.get_metodo_contacto_display }} · {{ pedido.telefono_contacto }}</p>
+  {% if pedido.notas %}<p style="margin:0"><b>Notas:</b> {{ pedido.notas }}</p>{% endif %}
+</section>
+{% endblock %}

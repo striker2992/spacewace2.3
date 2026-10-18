@@ -40,7 +40,7 @@ class ClienteDetalle(PersonalRequeridoMixin, DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         cliente = self.object
-        ctx["cotizaciones"] = cliente.cotizaciones.prefetch_related("items")[:5]
+        ctx["cotizaciones"] = cliente.cotizaciones.prefetch_related("items", "servicios")[:5]
         ctx["pedidos"] = cliente.pedidos.all()[:5]
         ctx["n_cotizaciones"] = cliente.cotizaciones.count()
         ctx["n_pedidos"] = cliente.pedidos.count()

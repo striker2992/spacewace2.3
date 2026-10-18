@@ -42,7 +42,7 @@ def dashboard(request):
             "vendedores_activos": Vendedor.objects.filter(user__is_active=True).count(),
             "pedidos_pendientes_total": Pedido.objects.filter(estado=Pedido.Estado.PENDIENTE).count(),
             "resumen": resumen,
-            "recientes": Cotizacion.objects.select_related("cliente").prefetch_related("items")[:4],
+            "recientes": Cotizacion.objects.select_related("cliente").prefetch_related("items", "servicios")[:4],
             "ultimos_pedidos": Pedido.objects.select_related("cliente")[:8],
         },
     )

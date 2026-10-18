@@ -1,7 +1,7 @@
 from django import forms
 from django.forms import inlineformset_factory
 
-from .models import Cotizacion, CotizacionItem, Pedido
+from .models import Cotizacion, CotizacionItem, CotizacionServicio, Pedido
 
 
 class CotizacionForm(forms.ModelForm):
@@ -39,6 +39,36 @@ ItemFormSet = inlineformset_factory(
     extra=0,
     min_num=1,
     validate_min=True,
+    can_delete=True,
+)
+
+
+class CotizacionServicioForm(forms.ModelForm):
+    precio_unitario = forms.DecimalField(
+        required=False, min_value=0, max_digits=12, decimal_places=2
+    )
+
+    class Meta:
+        model = CotizacionServicio
+        fields = ["servicio", "cantidad", "precio_unitario"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["servicio"].queryset = self.fields["servicio"].queryset.filter(activo=True)
+
+    def clean(self):
+        cleaned = super().clean()
+        servicio = cleaned.get("servicio")
+        if servicio and cleaned.get("precio_unitario") in (None, ""):
+            cleaned["precio_unitario"] = servicio.precio
+        return cleaned
+
+
+ServicioFormSet = inlineformset_factory(
+    Cotizacion,
+    CotizacionServicio,
+    form=CotizacionServicioForm,
+    extra=0,
     can_delete=True,
 )
 

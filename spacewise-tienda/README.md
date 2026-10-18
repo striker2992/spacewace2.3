@@ -45,6 +45,7 @@ El archivo `.env` está en `.gitignore`: **nunca subas contraseñas al repositor
 | `/accounts/registro/` | Crear cuenta de cliente (User + perfil con RUT, teléfono, empresa, dirección) |
 | `/panel/`        | Panel del equipo interno: totales, resumen de cotizaciones y últimos pedidos |
 | `/panel/contenedores/` | Agregar, editar y eliminar contenedores (precio, stock, foto, visibilidad) |
+| `/panel/contenedores/servicios/` | Servicios adicionales (transporte, instalación, etc.) que se muestran en el catálogo y se agregan a las cotizaciones |
 | `/panel/pedidos/` | Revisar pedidos web y cambiar su estado |
 | `/panel/cotizaciones/` | Cotizaciones con varios contenedores; aprobar/rechazar |
 | `/panel/clientes/` | CRUD de clientes con su actividad |

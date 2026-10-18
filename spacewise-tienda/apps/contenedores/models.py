@@ -9,6 +9,8 @@ class Contenedor(models.Model):
         HC_40 = "40HC", "40' High Cube"
         REEFER_40 = "40RF", "40' Refrigerado"
         OPEN_TOP_20 = "20OT", "20' Open Top"
+        OFICINA_20 = "20OF", "20' Oficina"
+        OFICINA_40 = "40OF", "40' Oficina"
 
     class Condicion(models.TextChoices):
         NUEVO = "nuevo", "Nuevo"
@@ -58,3 +60,22 @@ class Contenedor(models.Model):
     @property
     def lista_especificaciones(self):
         return [linea.strip() for linea in self.especificaciones.splitlines() if linea.strip()]
+
+
+class Servicio(models.Model):
+    """Servicio adicional que se ofrece junto a los contenedores (transporte, instalación, etc.)."""
+
+    nombre = models.CharField(max_length=120)
+    descripcion = models.TextField("Descripción", blank=True)
+    precio = models.DecimalField("Precio referencial", max_digits=12, decimal_places=2)
+    unidad = models.CharField(
+        "Se cobra por", max_length=40, default="servicio", help_text="Ej.: servicio, km, día, unidad"
+    )
+    activo = models.BooleanField("Visible en el catálogo", default=True)
+
+    class Meta:
+        ordering = ["nombre"]
+        verbose_name_plural = "servicios"
+
+    def __str__(self):
+        return self.nombre

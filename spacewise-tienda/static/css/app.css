@@ -196,6 +196,7 @@ input:focus, select:focus, textarea:focus, .btn:focus-visible { outline: 2px sol
 .prod-img.tipo-40HC { background: #166534; }
 .prod-img.tipo-40RF { background: #0f766e; }
 .prod-img.tipo-20OT { background: #b45309; }
+.prod-img.tipo-20OF, .prod-img.tipo-40OF { background: #475569; }
 .prod-body { padding: 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
 .prod-body h3 { margin: 0; font-size: 16px; }
 .prod-body h3 a { color: var(--text); }
@@ -262,6 +263,7 @@ input:focus, select:focus, textarea:focus, .btn:focus-visible { outline: 2px sol
 .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .thumb.tipo-20DC { background: #1e40af; } .thumb.tipo-40DC { background: #991b1b; } .thumb.tipo-40HC { background: #166534; }
 .thumb.tipo-40RF { background: #0f766e; } .thumb.tipo-20OT { background: #b45309; }
+.thumb.tipo-20OF, .thumb.tipo-40OF { background: #475569; }
 td .actions { justify-content: flex-end; flex-wrap: nowrap; }
 .form-card { width: 100%; }
 .check-field { display: flex; align-items: center; gap: 8px; }
@@ -276,3 +278,8 @@ td .actions { justify-content: flex-end; flex-wrap: nowrap; }
   .stat small { overflow-wrap: anywhere; }
   .row-link .bar { width: 48px; }
 }
+
+.serv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.serv { border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+.serv-precio { font-weight: 700; margin-top: auto; }
+.serv-precio small { font-weight: 500; color: var(--muted); }

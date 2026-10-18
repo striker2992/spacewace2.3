@@ -25,7 +25,7 @@
   <div class="table-wrap">
     <table class="items-table">
       <thead><tr><th>CONTENEDOR</th><th class="col-qty">CANTIDAD</th><th class="col-price">PRECIO UNIT.</th><th class="col-del">QUITAR</th></tr></thead>
-      <tbody id="items">
+      <tbody id="{{ formset.prefix }}-filas">
       {% for f in formset %}
         <tr>
           <td>{% for h in f.hidden_fields %}{{ h }}{% endfor %}{{ f.contenedor }}{{ f.contenedor.errors }}</td>
@@ -37,7 +37,7 @@
       </tbody>
     </table>
   </div>
-  <template id="item-vacio">
+  <template id="{{ formset.prefix }}-vacio">
     <tr>
       <td>{% for h in formset.empty_form.hidden_fields %}{{ h }}{% endfor %}{{ formset.empty_form.contenedor }}</td>
       <td class="col-qty">{{ formset.empty_form.cantidad }}</td>
@@ -45,7 +45,36 @@
       <td class="col-del"></td>
     </tr>
   </template>
-  <p><button class="btn btn-sm" type="button" id="agregar-item">+ Agregar contenedor</button></p>
+  <p><button class="btn btn-sm" type="button" data-agregar="{{ formset.prefix }}">+ Agregar contenedor</button></p>
+
+  <h2>Servicios adicionales</h2>
+  <p class="muted" style="margin-top:-8px">Opcional. Si dejas el precio vacío se usa el precio referencial.</p>
+  {{ servicios.management_form }}
+  {% if servicios.non_form_errors %}<div class="alert-form">{{ servicios.non_form_errors }}</div>{% endif %}
+  <div class="table-wrap">
+    <table class="items-table">
+      <thead><tr><th>SERVICIO</th><th class="col-qty">CANTIDAD</th><th class="col-price">PRECIO UNIT.</th><th class="col-del">QUITAR</th></tr></thead>
+      <tbody id="{{ servicios.prefix }}-filas">
+      {% for f in servicios %}
+        <tr>
+          <td>{% for h in f.hidden_fields %}{{ h }}{% endfor %}{{ f.servicio }}{{ f.servicio.errors }}</td>
+          <td class="col-qty">{{ f.cantidad }}{{ f.cantidad.errors }}</td>
+          <td class="col-price">{{ f.precio_unitario }}{{ f.precio_unitario.errors }}</td>
+          <td class="col-del">{% if f.instance.pk %}{{ f.DELETE }}{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <template id="{{ servicios.prefix }}-vacio">
+    <tr>
+      <td>{% for h in servicios.empty_form.hidden_fields %}{{ h }}{% endfor %}{{ servicios.empty_form.servicio }}</td>
+      <td class="col-qty">{{ servicios.empty_form.cantidad }}</td>
+      <td class="col-price">{{ servicios.empty_form.precio_unitario }}</td>
+      <td class="col-del"></td>
+    </tr>
+  </template>
+  <p><button class="btn btn-sm" type="button" data-agregar="{{ servicios.prefix }}">+ Agregar servicio</button></p>
 
   <div class="actions">
     <button class="btn btn-primary" type="submit">Guardar</button>
@@ -55,12 +84,15 @@
 {% endblock %}
 {% block extra_js %}
 <script>
-// Agrega una fila nueva al formset reemplazando __prefix__ por el siguiente índice
-document.getElementById("agregar-item").addEventListener("click", () => {
-  const total = document.getElementById("id_{{ formset.prefix }}-TOTAL_FORMS");
-  const html = document.getElementById("item-vacio").innerHTML.replace(/__prefix__/g, total.value);
-  document.getElementById("items").insertAdjacentHTML("beforeend", html);
-  total.value = Number(total.value) + 1;
+// Agrega una fila nueva al formset indicado, reemplazando __prefix__ por el siguiente índice
+document.querySelectorAll("[data-agregar]").forEach((boton) => {
+  boton.addEventListener("click", () => {
+    const prefijo = boton.dataset.agregar;
+    const total = document.getElementById(`id_${prefijo}-TOTAL_FORMS`);
+    const html = document.getElementById(`${prefijo}-vacio`).innerHTML.replace(/__prefix__/g, total.value);
+    document.getElementById(`${prefijo}-filas`).insertAdjacentHTML("beforeend", html);
+    total.value = Number(total.value) + 1;
+  });
 });
 </script>
 {% endblock %}

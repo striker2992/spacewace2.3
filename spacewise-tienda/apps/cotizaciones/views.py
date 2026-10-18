@@ -10,7 +10,7 @@ from django.views.generic import DeleteView, DetailView, ListView
 from apps.core.mixins import BorrarMixin, PersonalRequeridoMixin, QueryStringMixin, personal_requerido
 from apps.vendedores.models import Vendedor
 
-from .forms import CotizacionForm, ItemFormSet
+from .forms import CotizacionForm, ItemFormSet, ServicioFormSet
 from .models import Cotizacion
 
 
@@ -23,7 +23,7 @@ class CotizacionLista(PersonalRequeridoMixin, QueryStringMixin, ListView):
     def get_queryset(self):
         qs = (
             Cotizacion.objects.select_related("cliente", "vendedor__user")
-            .prefetch_related("items")
+            .prefetch_related("items", "servicios")
         )
         q = self.request.GET.get("q", "").strip()
         estado = self.request.GET.get("estado", "")
@@ -47,7 +47,7 @@ class CotizacionDetalle(PersonalRequeridoMixin, DetailView):
 
     def get_queryset(self):
         return Cotizacion.objects.select_related("cliente", "vendedor__user").prefetch_related(
-            "items__contenedor"
+            "items__contenedor", "servicios__servicio"
         )
 
 
@@ -55,7 +55,8 @@ def _guardar(request, instance=None):
     if request.method == "POST":
         form = CotizacionForm(request.POST, instance=instance)
         formset = ItemFormSet(request.POST, instance=form.instance)
-        if form.is_valid() and formset.is_valid():
+        servicios = ServicioFormSet(request.POST, instance=form.instance, prefix="servicios")
+        if form.is_valid() and formset.is_valid() and servicios.is_valid():
             with transaction.atomic():
                 cot = form.save(commit=False)
                 if instance is None:
@@ -63,6 +64,8 @@ def _guardar(request, instance=None):
                 cot.save()
                 formset.instance = cot
                 formset.save()
+                servicios.instance = cot
+                servicios.save()
             messages.success(request, "Cotización guardada.")
             return redirect(cot)
     else:
@@ -76,6 +79,7 @@ def _guardar(request, instance=None):
             # Viene del catálogo: precarga ese contenedor como primer ítem
             initial_items = [{"contenedor": int(contenedor_id)}]
         formset = ItemFormSet(instance=form.instance, initial=initial_items)
+        servicios = ServicioFormSet(instance=form.instance, prefix="servicios")
 
     return render(
         request,
@@ -83,6 +87,7 @@ def _guardar(request, instance=None):
         {
             "form": form,
             "formset": formset,
+            "servicios": servicios,
             "titulo": "Editar cotización" if instance else "Nueva cotización",
             "cancel_url": instance.get_absolute_url() if instance else reverse_lazy("cotizaciones:lista"),
         },

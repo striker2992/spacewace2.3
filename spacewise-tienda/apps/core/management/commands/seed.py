@@ -5,8 +5,8 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from apps.clientes.models import Cliente
-from apps.contenedores.models import Contenedor
-from apps.cotizaciones.models import Cotizacion, CotizacionItem
+from apps.contenedores.models import Contenedor, Servicio
+from apps.cotizaciones.models import Cotizacion, CotizacionItem, CotizacionServicio
 from apps.vendedores.models import Vendedor
 
 User = get_user_model()
@@ -68,6 +68,7 @@ class Command(BaseCommand):
             ("Contenedor 40' High Cube", "40HC", "nuevo", 6900, 8, "Valparaíso"),
             ("Contenedor 40' refrigerado", "40RF", "usado", 14500, 3, "San Antonio"),
             ("Contenedor 20' Open Top", "20OT", "nuevo", 5400, 4, "Coronel"),
+            ("Contenedor oficina 20'", "20OF", "nuevo", 9800, 2, "Coronel"),
         ]
         medidas = {
             "20DC": "Medidas internas: 5,90 x 2,35 x 2,39 m\nCapacidad: 33 m³\nCarga máxima: 28.000 kg",
@@ -75,6 +76,7 @@ class Command(BaseCommand):
             "40HC": "Medidas internas: 12,03 x 2,35 x 2,69 m\nCapacidad: 76 m³\nCarga máxima: 26.500 kg",
             "40RF": "Medidas internas: 11,58 x 2,29 x 2,25 m\nTemperatura: -25 °C a +25 °C\nCarga máxima: 27.000 kg",
             "20OT": "Medidas internas: 5,90 x 2,35 x 2,34 m\nTecho removible con lona\nCarga máxima: 28.000 kg",
+            "20OF": "Medidas internas: 5,90 x 2,35 x 2,39 m\nAislación térmica, ventana y puerta peatonal\nInstalación eléctrica básica",
         }
         contenedores = [
             Contenedor.objects.create(
@@ -101,6 +103,16 @@ class Command(BaseCommand):
             for i, n in enumerate(nombres, start=1)
         ]
 
+        servicios = [
+            Servicio.objects.create(nombre=n, descripcion=d, precio=p, unidad=u)
+            for n, d, p, u in [
+                ("Transporte y entrega", "Traslado en camión pluma hasta la dirección del cliente.", 1200, "km"),
+                ("Instalación y nivelación", "Posicionamiento y nivelación del contenedor en terreno.", 3500, "servicio"),
+                ("Modificación: ventana o puerta", "Corte e instalación de ventana o puerta peatonal.", 2800, "unidad"),
+                ("Mantenimiento preventivo", "Revisión de estructura, sellos y pintura.", 1900, "visita"),
+            ]
+        ]
+
         hoy = timezone.localdate()
         estados_cot = ["aprobada", "pendiente", "rechazada", "pendiente", "aprobada", "pendiente"]
         for i, estado in enumerate(estados_cot):
@@ -114,5 +126,10 @@ class Command(BaseCommand):
             CotizacionItem.objects.create(
                 cotizacion=cot, contenedor=cont, cantidad=1 + i % 3, precio_unitario=cont.precio
             )
+            if i % 2 == 0:
+                serv = servicios[i % len(servicios)]
+                CotizacionServicio.objects.create(
+                    cotizacion=cot, servicio=serv, cantidad=1, precio_unitario=serv.precio
+                )
 
         self.stdout.write(self.style.SUCCESS("Datos de demostración cargados."))

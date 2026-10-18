@@ -34,7 +34,10 @@
           <td>{% if c.vendedor %}{{ c.vendedor.user.get_full_name|default:c.vendedor.user.username }}{% else %}—{% endif %}</td>
           <td class="num">${{ c.total|floatformat:"0g" }}</td>
           <td><span class="badge {{ c.badge }}">{{ c.get_estado_display }}</span></td>
-          <td class="num"><a class="btn btn-sm{% if c.estado == 'solicitada' %} btn-primary{% endif %}" href="{{ c.get_absolute_url }}">{% if c.estado == "solicitada" %}Valorizar{% else %}Ver{% endif %}</a></td>
+          <td class="num"><div class="actions">
+            <a class="btn btn-sm" href="{% url 'cotizaciones:pdf' c.pk %}" target="_blank" rel="noopener" title="Ver PDF de {{ c.numero }}">PDF</a>
+            <a class="btn btn-sm{% if c.estado == 'solicitada' %} btn-primary{% endif %}" href="{{ c.get_absolute_url }}">{% if c.estado == "solicitada" %}Valorizar{% else %}Ver{% endif %}</a>
+          </div></td>
         </tr>
       {% empty %}
         <tr><td colspan="7" class="empty">No hay cotizaciones que coincidan.</td></tr>

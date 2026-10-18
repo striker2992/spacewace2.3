@@ -6,6 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, FormView, ListView, TemplateView
@@ -261,4 +262,4 @@ def mi_cotizacion_pdf(request, pk):
     if cot.estado != Cotizacion.Estado.APROBADA:
         messages.info(request, "El PDF estará disponible cuando la cotización sea aprobada.")
         return redirect("tienda:detalle_cotizacion", pk=cot.pk)
-    return respuesta_pdf(cot)
+    return respuesta_pdf(request, cot, reverse("tienda:detalle_cotizacion", args=[cot.pk]))

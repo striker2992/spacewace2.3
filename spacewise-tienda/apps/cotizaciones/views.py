@@ -139,4 +139,4 @@ def cotizacion_pdf(request, pk):
         ),
         pk=pk,
     )
-    return respuesta_pdf(cot)
+    return respuesta_pdf(request, cot, cot.get_absolute_url())

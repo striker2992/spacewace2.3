@@ -24,6 +24,10 @@ def crear_pedido(carrito, cliente, datos):
     (otro cliente pudo comprar mientras tanto) y los precios se copian del catálogo.
     `datos`: direccion_entrega, telefono_contacto, metodo_contacto, notas.
     """
+    from apps.core.mixins import es_personal  # import diferido: evita ciclos
+
+    if cliente.usuario_id and es_personal(cliente.usuario):
+        raise PedidoError("Las cuentas del equipo interno no pueden realizar compras.")
     with transaction.atomic():
         items = list(carrito.items.select_related("contenedor"))
         if not items:

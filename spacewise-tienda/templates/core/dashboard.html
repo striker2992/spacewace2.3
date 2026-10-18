@@ -3,7 +3,7 @@
 {% block title %}Dashboard · SpaceWise{% endblock %}
 {% block content %}
 {% if pedidos_pendientes_total %}
-<a class="row-link" href="{% url 'vendedores:pedidos' %}?estado=pendiente" style="background:var(--warn-bg);border-color:transparent">
+<a class="row-link" href="{% url 'admin:cotizaciones_pedido_changelist' %}?estado__exact=pendiente" style="background:var(--warn-bg);border-color:transparent">
   <span class="chip tone-amber">{% icon "clipboard" %}</span>
   <span class="label">Tienes {{ pedidos_pendientes_total }} pedido{{ pedidos_pendientes_total|pluralize }} web pendiente{{ pedidos_pendientes_total|pluralize }} de revisar</span>
   <span class="btn btn-sm">Revisar</span>
@@ -29,10 +29,11 @@
   <section class="card">
     <h2>Resumen de cotizaciones</h2>
     {% for r in resumen %}
-    <a class="row-link" href="{% url 'cotizaciones:lista' %}?estado={{ r.estado }}">
+    <a class="row-link" href="{% url 'admin:cotizaciones_cotizacion_changelist' %}?estado__exact={{ r.estado }}">
       <span class="chip tone-{{ r.tono }}">{% icon r.icono %}</span>
       <span class="label">{{ r.etiqueta }} <small class="muted">({{ r.n }})</small></span>
       <span class="bar {{ r.tono }}"><i style="width: {{ r.pct }}%"></i></span>
+      <span class="muted" aria-hidden="true">&rsaquo;</span>
     </a>
     {% endfor %}
   </section>
@@ -40,42 +41,35 @@
   <section class="card">
     <h2>Cotizaciones recientes por cliente</h2>
     {% for c in recientes %}
-    <a class="recent" href="{{ c.get_absolute_url }}">
+    <a class="recent" href="{% url 'admin:cotizaciones_cotizacion_change' c.pk %}">
       <span><b>{{ c.cliente.nombre }}</b><small>{{ c.fecha|date:"d/m" }}</small></span>
       <b>{{ c.total|compact }}</b>
     </a>
     {% empty %}
-    <p class="muted">Aún no hay cotizaciones. <a href="{% url 'cotizaciones:crear' %}">Crea la primera</a>.</p>
+    <p class="muted">Aún no hay cotizaciones. <a href="{% url 'admin:cotizaciones_cotizacion_add' %}">Crea la primera</a>.</p>
     {% endfor %}
   </section>
 </div>
 
 <section class="card">
   <div class="toolbar" style="justify-content:space-between">
-    <h2 style="margin:0">Últimas solicitudes</h2>
-    <form method="get">
-      <input type="search" name="q" value="{{ q }}" placeholder="Buscar por nombre o RUT" aria-label="Buscar solicitudes">
-      <select name="estado" onchange="this.form.submit()" aria-label="Filtrar por estado">
-        <option value="">Todos los estados</option>
-        {% for value, label in estados %}<option value="{{ value }}" {% if value == estado %}selected{% endif %}>{{ label }}</option>{% endfor %}
-      </select>
-      <button class="btn" type="submit">Filtrar</button>
-    </form>
+    <h2 style="margin:0">Últimos pedidos web</h2>
+    <a class="btn btn-sm" href="{% url 'admin:cotizaciones_pedido_changelist' %}">Ver todos</a>
   </div>
   <div class="table-wrap">
     <table>
-      <thead><tr><th>CLIENTE</th><th>TIPO</th><th>CANTIDAD</th><th>ESTADO</th><th class="num">ACCIONES</th></tr></thead>
+      <thead><tr><th>PEDIDO</th><th>CLIENTE</th><th>FECHA</th><th>ESTADO</th><th class="num">TOTAL</th></tr></thead>
       <tbody>
-      {% for o in solicitudes %}
+      {% for p in ultimos_pedidos %}
         <tr>
-          <td><a href="{{ o.cliente.get_absolute_url }}"><b>{{ o.cliente.nombre }}</b></a></td>
-          <td>{{ o.get_tipo_display }}</td>
-          <td>{{ o.cantidad }}</td>
-          <td><span class="badge {{ o.badge }}">{{ o.get_estado_display }}</span></td>
-          <td class="num"><a class="btn btn-sm" href="{% url 'operaciones:editar' o.pk %}">Editar</a></td>
+          <td><a href="{% url 'admin:cotizaciones_pedido_change' p.pk %}"><b>{{ p.numero_pedido }}</b></a></td>
+          <td>{{ p.cliente.nombre }}</td>
+          <td>{{ p.fecha_creacion|date:"d/m/Y" }}</td>
+          <td><span class="badge {{ p.badge }}">{{ p.get_estado_display }}</span></td>
+          <td class="num">${{ p.total|floatformat:"0g" }}</td>
         </tr>
       {% empty %}
-        <tr><td colspan="5" class="empty">No hay solicitudes que coincidan.</td></tr>
+        <tr><td colspan="5" class="empty">Aún no hay pedidos.</td></tr>
       {% endfor %}
       </tbody>
     </table>

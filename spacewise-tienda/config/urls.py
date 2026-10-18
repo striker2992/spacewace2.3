@@ -6,10 +6,12 @@ from django.urls import include, path
 
 from apps.clientes.views import RegistroView
 from apps.contenedores.views import CatalogoView, ContenedorDetalleView
-from apps.core.views import LoginView
+from apps.core.views import LoginView, dashboard
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    # Panel del equipo interno (admins y vendedores)
+    path("panel/", dashboard, name="dashboard"),
     # Cuentas
     path("accounts/login/", LoginView.as_view(), name="login"),
     path("accounts/logout/", auth_views.LogoutView.as_view(), name="logout"),

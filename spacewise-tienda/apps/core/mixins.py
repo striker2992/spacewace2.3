@@ -51,6 +51,32 @@ def personal_requerido(view):
     return envuelta
 
 
+_MSG_SIN_COMPRAS = "Las cuentas del equipo interno no pueden realizar compras en la tienda."
+
+
+def solo_clientes(view):
+    """Bloquea carrito y checkout para el equipo interno (admins y vendedores): no compran."""
+
+    @wraps(view)
+    def envuelta(request, *args, **kwargs):
+        if es_personal(request.user):
+            messages.error(request, _MSG_SIN_COMPRAS)
+            return redirect("dashboard")
+        return view(request, *args, **kwargs)
+
+    return envuelta
+
+
+class SoloClientesMixin:
+    """Equivalente de `solo_clientes` para vistas basadas en clases (va primero en la herencia)."""
+
+    def dispatch(self, request, *args, **kwargs):
+        if es_personal(request.user):
+            messages.error(request, _MSG_SIN_COMPRAS)
+            return redirect("dashboard")
+        return super().dispatch(request, *args, **kwargs)
+
+
 class QueryStringMixin:
     """Expone `qs` (querystring sin 'page') para conservar filtros al paginar."""
 

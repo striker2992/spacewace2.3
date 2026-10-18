@@ -71,11 +71,15 @@
       {% if c.descripcion %}<p class="prod-desc">{{ c.descripcion }}</p>{% endif %}
       <div class="prod-price">${{ c.precio|floatformat:"0g" }} <small>por unidad</small></div>
       <div class="prod-foot">
+        {% if es_personal %}
+        <button class="btn" type="button" disabled title="Las cuentas del equipo interno no pueden comprar">{% icon "lock" %} Compra no disponible</button>
+        {% else %}
         <form method="post" action="{% url 'tienda:agregar' c.pk %}">
           {% csrf_token %}
           <input type="hidden" name="next" value="{{ request.get_full_path }}">
           <button class="btn btn-primary" type="submit" {% if not c.disponible %}disabled{% endif %}>{% icon "cart" %} Agregar al carrito</button>
         </form>
+        {% endif %}
       </div>
     </div>
   </article>

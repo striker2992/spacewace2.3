@@ -15,23 +15,20 @@
     <div class="brand"><span class="logo">{% icon "box" %}</span> SpaceWise</div>
     <nav class="nav">
       <a href="{% url 'dashboard' %}" class="{% if url == 'dashboard' %}active{% endif %}">{% icon "home" %} Dashboard</a>
-      <a href="{% url 'clientes:lista' %}" class="{% if ns == 'clientes' %}active{% endif %}">{% icon "users" %} Clientes</a>
-      <a href="{% url 'cotizaciones:lista' %}" class="{% if ns == 'cotizaciones' %}active{% endif %}">{% icon "file-text" %} Cotizaciones</a>
-      <a href="{% url 'catalogo' %}" class="{% if url == 'catalogo' %}active{% endif %}">{% icon "box" %} Catálogo</a>
-      <a href="{% url 'operaciones:lista' %}" class="{% if ns == 'operaciones' %}active{% endif %}">{% icon "cart" %} Compras</a>
-      <a href="{% url 'contenedores:lista' %}" class="{% if ns == 'contenedores' %}active{% endif %}">{% icon "box" %} Contenedores</a>
-      <a href="{% url 'vendedores:pedidos' %}" class="{% if url == 'pedidos' or url == 'detalle_pedido' %}active{% endif %}">{% icon "clipboard" %} Pedidos web{% if pedidos_pendientes %}<span class="nav-badge" title="Pedidos pendientes">{{ pedidos_pendientes }}</span>{% endif %}</a>
-      <a href="{% url 'vendedores:lista' %}" class="{% if ns == 'vendedores' and url != 'pedidos' and url != 'detalle_pedido' %}active{% endif %}">{% icon "trend" %} Vendedores</a>
+      <a href="{% url 'admin:clientes_cliente_changelist' %}">{% icon "users" %} Clientes</a>
+      <a href="{% url 'admin:cotizaciones_cotizacion_changelist' %}">{% icon "file-text" %} Cotizaciones</a>
+      <a href="{% url 'admin:cotizaciones_pedido_changelist' %}">{% icon "clipboard" %} Pedidos web{% if pedidos_pendientes %}<span class="nav-badge" title="Pedidos pendientes">{{ pedidos_pendientes }}</span>{% endif %}</a>
+      <a href="{% url 'catalogo' %}">{% icon "box" %} Catálogo</a>
+      <a href="{% url 'admin:contenedores_contenedor_changelist' %}">{% icon "box" %} Contenedores</a>
+      <a href="{% url 'admin:vendedores_vendedor_changelist' %}">{% icon "trend" %} Vendedores</a>
       <hr>
-      <span class="disabled" title="Próximamente">{% icon "pie" %} Reportes</span>
-      <span class="disabled" title="Próximamente">{% icon "settings" %} Configuración</span>
-      <span class="disabled" title="Próximamente">{% icon "help" %} Ayuda</span>
+      <a href="{% url 'admin:index' %}">{% icon "settings" %} Administración</a>
     </nav>
   </aside>
   <div class="main">
     <header class="topbar">
       <button class="icon-btn" id="toggle-nav" type="button" aria-label="Mostrar u ocultar menú">{% icon "menu" %}</button>
-      <form class="search" method="get" action="{% url 'clientes:lista' %}" role="search">
+      <form class="search" method="get" action="{% url 'admin:clientes_cliente_changelist' %}" role="search">
         {% icon "search" %}
         <input type="search" name="q" placeholder="Buscar clientes..." aria-label="Buscar clientes">
       </form>

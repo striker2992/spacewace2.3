@@ -1,6 +1,10 @@
 from django import forms
 from django.forms import inlineformset_factory
 
+from apps.core.validators import (
+    ValidacionMixin, validar_fecha_no_pasada, validar_nombre_persona, validar_rut, validar_telefono, validar_texto,
+)
+
 from .models import Cotizacion, CotizacionItem, CotizacionServicio, Pedido
 
 
@@ -14,7 +18,9 @@ class CotizacionForm(forms.ModelForm):
         }
 
 
-class CotizacionItemForm(forms.ModelForm):
+class CotizacionItemForm(ValidacionMixin, forms.ModelForm):
+    filtros = {"cantidad": "cantidad"}
+
     precio_unitario = forms.DecimalField(
         required=False, min_value=0, max_digits=12, decimal_places=2
     )
@@ -43,7 +49,9 @@ ItemFormSet = inlineformset_factory(
 )
 
 
-class CotizacionServicioForm(forms.ModelForm):
+class CotizacionServicioForm(ValidacionMixin, forms.ModelForm):
+    filtros = {"cantidad": "cantidad"}
+
     precio_unitario = forms.DecimalField(
         required=False, min_value=0, max_digits=12, decimal_places=2
     )
@@ -77,7 +85,9 @@ ServicioFormSet = inlineformset_factory(
 # Solicitud de cotización hecha por el cliente desde la tienda (sin precios:
 # se toman del catálogo como referencia y el equipo los confirma al valorizar)
 # ---------------------------------------------------------------------------
-class SolicitudForm(forms.ModelForm):
+class SolicitudForm(ValidacionMixin, forms.ModelForm):
+    validaciones = {"fecha_requerida": validar_fecha_no_pasada, "direccion_entrega": validar_texto}
+
     class Meta:
         model = Cotizacion
         fields = ["fecha_requerida", "direccion_entrega", "notas"]
@@ -90,7 +100,9 @@ class SolicitudForm(forms.ModelForm):
         }
 
 
-class SolicitudItemForm(forms.ModelForm):
+class SolicitudItemForm(ValidacionMixin, forms.ModelForm):
+    filtros = {"cantidad": "cantidad"}
+
     class Meta:
         model = CotizacionItem
         fields = ["contenedor", "cantidad"]
@@ -98,10 +110,11 @@ class SolicitudItemForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["contenedor"].queryset = self.fields["contenedor"].queryset.filter(activo=True)
-        self.fields["cantidad"].widget.attrs["min"] = 1
 
 
-class SolicitudServicioForm(forms.ModelForm):
+class SolicitudServicioForm(ValidacionMixin, forms.ModelForm):
+    filtros = {"cantidad": "cantidad"}
+
     class Meta:
         model = CotizacionServicio
         fields = ["servicio", "cantidad"]
@@ -109,7 +122,6 @@ class SolicitudServicioForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["servicio"].queryset = self.fields["servicio"].queryset.filter(activo=True)
-        self.fields["cantidad"].widget.attrs["min"] = 1
 
 
 SolicitudItemFormSet = inlineformset_factory(
@@ -121,8 +133,14 @@ SolicitudServicioFormSet = inlineformset_factory(
 )
 
 
-class CheckoutForm(forms.Form):
+class CheckoutForm(ValidacionMixin, forms.Form):
     """Confirmación de compra: entrega, contacto y datos de facturación del cliente."""
+
+    validaciones = {
+        "nombre": validar_nombre_persona, "rut": validar_rut, "razon_social": validar_texto,
+        "direccion_entrega": validar_texto, "telefono_contacto": validar_telefono,
+    }
+    filtros = {"nombre": "letras", "rut": "rut", "telefono_contacto": "telefono"}
 
     nombre = forms.CharField(label="Nombre del contacto", max_length=150)
     rut = forms.CharField(label="RUT", max_length=20)

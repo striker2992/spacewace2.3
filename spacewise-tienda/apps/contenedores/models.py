@@ -1,3 +1,4 @@
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.urls import reverse
 
@@ -25,7 +26,9 @@ class Contenedor(models.Model):
     tipo = models.CharField(max_length=4, choices=Tipo.choices)
     condicion = models.CharField("Condición", max_length=10, choices=Condicion.choices, default=Condicion.NUEVO)
     estado = models.CharField(max_length=15, choices=Estado.choices, default=Estado.DISPONIBLE)
-    precio = models.DecimalField("Precio unitario", max_digits=12, decimal_places=2)
+    precio = models.DecimalField(
+        "Precio unitario", max_digits=12, decimal_places=2, validators=[MinValueValidator(1)]
+    )
     stock = models.PositiveIntegerField(default=0)
     ubicacion = models.CharField("Ubicación", max_length=120, blank=True)
     descripcion = models.TextField("Descripción", blank=True)
@@ -67,7 +70,9 @@ class Servicio(models.Model):
 
     nombre = models.CharField(max_length=120)
     descripcion = models.TextField("Descripción", blank=True)
-    precio = models.DecimalField("Precio referencial", max_digits=12, decimal_places=2)
+    precio = models.DecimalField(
+        "Precio referencial", max_digits=12, decimal_places=2, validators=[MinValueValidator(1)]
+    )
     unidad = models.CharField(
         "Se cobra por", max_length=40, default="servicio", help_text="Ej.: servicio, km, día, unidad"
     )

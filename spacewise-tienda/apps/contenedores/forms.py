@@ -1,9 +1,14 @@
 from django import forms
 
+from apps.core.validators import ValidacionMixin, validar_solo_letras, validar_texto
+
 from .models import Contenedor, Servicio
 
 
-class ContenedorForm(forms.ModelForm):
+class ContenedorForm(ValidacionMixin, forms.ModelForm):
+    validaciones = {"nombre": validar_texto, "ubicacion": validar_texto}
+    filtros = {"precio": "positivo"}
+
     class Meta:
         model = Contenedor
         fields = [
@@ -17,7 +22,10 @@ class ContenedorForm(forms.ModelForm):
         }
 
 
-class ServicioForm(forms.ModelForm):
+class ServicioForm(ValidacionMixin, forms.ModelForm):
+    validaciones = {"nombre": validar_texto, "unidad": validar_solo_letras}
+    filtros = {"precio": "positivo", "unidad": "letras"}
+
     class Meta:
         model = Servicio
         fields = ["nombre", "precio", "unidad", "descripcion", "activo"]

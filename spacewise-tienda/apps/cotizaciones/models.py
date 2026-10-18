@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
@@ -72,8 +73,8 @@ class Cotizacion(models.Model):
 class CotizacionItem(models.Model):
     cotizacion = models.ForeignKey(Cotizacion, on_delete=models.CASCADE, related_name="items")
     contenedor = models.ForeignKey("contenedores.Contenedor", on_delete=models.PROTECT)
-    cantidad = models.PositiveIntegerField(default=1)
-    precio_unitario = models.DecimalField(max_digits=12, decimal_places=2)
+    cantidad = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])
+    precio_unitario = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
 
     def __str__(self):
         return f"{self.cantidad} × {self.contenedor.nombre}"
@@ -86,8 +87,8 @@ class CotizacionItem(models.Model):
 class CotizacionServicio(models.Model):
     cotizacion = models.ForeignKey(Cotizacion, on_delete=models.CASCADE, related_name="servicios")
     servicio = models.ForeignKey("contenedores.Servicio", on_delete=models.PROTECT)
-    cantidad = models.PositiveIntegerField(default=1)
-    precio_unitario = models.DecimalField(max_digits=12, decimal_places=2)
+    cantidad = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])
+    precio_unitario = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
 
     def __str__(self):
         return f"{self.cantidad} × {self.servicio.nombre}"

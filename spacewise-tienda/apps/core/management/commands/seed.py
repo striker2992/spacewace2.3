@@ -132,4 +132,19 @@ class Command(BaseCommand):
                     cotizacion=cot, servicio=serv, cantidad=1, precio_unitario=serv.precio
                 )
 
+        # Una solicitud hecha por la clienta de la tienda, esperando valorización
+        camila = Cliente.objects.filter(usuario__username="cliente").first()
+        if camila:
+            sol = Cotizacion.objects.create(
+                cliente=camila, estado=Cotizacion.Estado.SOLICITADA, origen=Cotizacion.Origen.WEB,
+                fecha_requerida=hoy + timedelta(days=20), direccion_entrega=camila.direccion,
+                notas="Lo necesito como bodega para una obra.",
+            )
+            CotizacionItem.objects.create(
+                cotizacion=sol, contenedor=contenedores[0], cantidad=2, precio_unitario=contenedores[0].precio
+            )
+            CotizacionServicio.objects.create(
+                cotizacion=sol, servicio=servicios[0], cantidad=25, precio_unitario=servicios[0].precio
+            )
+
         self.stdout.write(self.style.SUCCESS("Datos de demostración cargados."))

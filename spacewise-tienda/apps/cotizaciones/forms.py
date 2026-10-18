@@ -73,6 +73,54 @@ ServicioFormSet = inlineformset_factory(
 )
 
 
+# ---------------------------------------------------------------------------
+# Solicitud de cotización hecha por el cliente desde la tienda (sin precios:
+# se toman del catálogo como referencia y el equipo los confirma al valorizar)
+# ---------------------------------------------------------------------------
+class SolicitudForm(forms.ModelForm):
+    class Meta:
+        model = Cotizacion
+        fields = ["fecha_requerida", "direccion_entrega", "notas"]
+        labels = {"notas": "Comentarios o requerimientos"}
+        widgets = {
+            "fecha_requerida": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "notas": forms.Textarea(attrs={
+                "rows": 3, "placeholder": "Uso que le darás, modificaciones, acceso al terreno, etc."
+            }),
+        }
+
+
+class SolicitudItemForm(forms.ModelForm):
+    class Meta:
+        model = CotizacionItem
+        fields = ["contenedor", "cantidad"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["contenedor"].queryset = self.fields["contenedor"].queryset.filter(activo=True)
+        self.fields["cantidad"].widget.attrs["min"] = 1
+
+
+class SolicitudServicioForm(forms.ModelForm):
+    class Meta:
+        model = CotizacionServicio
+        fields = ["servicio", "cantidad"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["servicio"].queryset = self.fields["servicio"].queryset.filter(activo=True)
+        self.fields["cantidad"].widget.attrs["min"] = 1
+
+
+SolicitudItemFormSet = inlineformset_factory(
+    Cotizacion, CotizacionItem, form=SolicitudItemForm,
+    extra=0, min_num=1, validate_min=True, can_delete=False,
+)
+SolicitudServicioFormSet = inlineformset_factory(
+    Cotizacion, CotizacionServicio, form=SolicitudServicioForm, extra=0, can_delete=False,
+)
+
+
 class CheckoutForm(forms.Form):
     """Confirmación de compra: entrega, contacto y datos de facturación del cliente."""
 

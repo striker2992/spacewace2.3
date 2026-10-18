@@ -10,6 +10,14 @@
 </a>
 {% endif %}
 
+{% if solicitudes_total %}
+<a class="row-link" href="{% url 'cotizaciones:lista' %}?estado=solicitada" style="background:var(--info-bg);border-color:transparent">
+  <span class="chip tone-indigo">{% icon "file-text" %}</span>
+  <span class="label">Tienes {{ solicitudes_total }} solicitud{{ solicitudes_total|pluralize:"es" }} de cotización por valorizar</span>
+  <span class="btn btn-sm">Ver bandeja</span>
+</a>
+{% endif %}
+
 <section class="card">
   <div class="page-title" style="margin-bottom:18px">
     <div>

@@ -13,4 +13,7 @@ urlpatterns = [
     path("pedidos/", v.MisPedidosView.as_view(), name="mis_pedidos"),
     path("pedidos/<int:pk>/", v.MiPedidoDetalleView.as_view(), name="detalle_pedido"),
     path("pedidos/<int:pk>/gracias/", v.ConfirmacionView.as_view(), name="confirmacion"),
+    path("cotizaciones/", v.MisCotizacionesView.as_view(), name="mis_cotizaciones"),
+    path("cotizaciones/solicitar/", v.solicitar_cotizacion, name="solicitar_cotizacion"),
+    path("cotizaciones/<int:pk>/", v.MiCotizacionDetalleView.as_view(), name="detalle_cotizacion"),
 ]

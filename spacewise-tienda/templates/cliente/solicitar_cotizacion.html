@@ -1,0 +1,63 @@
+{% extends "base_publico.html" %}
+{% load static %}
+{% block title %}Solicitar cotización · SpaceWise{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="{% url 'tienda:mis_cotizaciones' %}">Mis cotizaciones</a> &rsaquo; Solicitar</div>
+<div class="page-title"><div><h1>Solicitar cotización</h1><p>Elige los contenedores y servicios que necesitas. Nuestro equipo te enviará el valor final.</p></div></div>
+
+<form method="post" class="card" novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="alert-form">{{ form.non_field_errors }}</div>{% endif %}
+
+  <h2>Contenedores</h2>
+  {{ formset.management_form }}
+  {% if formset.non_form_errors %}<div class="alert-form">Agrega al menos un contenedor.</div>{% endif %}
+  <div class="table-wrap">
+    <table class="items-table">
+      <thead><tr><th>CONTENEDOR</th><th class="col-qty">CANTIDAD</th></tr></thead>
+      <tbody id="{{ formset.prefix }}-filas">
+      {% for f in formset %}
+        <tr><td>{% for h in f.hidden_fields %}{{ h }}{% endfor %}{{ f.contenedor }}{{ f.contenedor.errors }}</td><td class="col-qty">{{ f.cantidad }}{{ f.cantidad.errors }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <template id="{{ formset.prefix }}-vacio">
+    <tr><td>{% for h in formset.empty_form.hidden_fields %}{{ h }}{% endfor %}{{ formset.empty_form.contenedor }}</td><td class="col-qty">{{ formset.empty_form.cantidad }}</td></tr>
+  </template>
+  <p><button class="btn btn-sm" type="button" data-agregar="{{ formset.prefix }}">+ Agregar contenedor</button></p>
+
+  <h2>Servicios adicionales <small class="muted" style="font-weight:400">(opcional)</small></h2>
+  {{ servicios.management_form }}
+  <div class="table-wrap">
+    <table class="items-table">
+      <thead><tr><th>SERVICIO</th><th class="col-qty">CANTIDAD</th></tr></thead>
+      <tbody id="{{ servicios.prefix }}-filas">
+      {% for f in servicios %}
+        <tr><td>{% for h in f.hidden_fields %}{{ h }}{% endfor %}{{ f.servicio }}{{ f.servicio.errors }}</td><td class="col-qty">{{ f.cantidad }}{{ f.cantidad.errors }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <template id="{{ servicios.prefix }}-vacio">
+    <tr><td>{% for h in servicios.empty_form.hidden_fields %}{{ h }}{% endfor %}{{ servicios.empty_form.servicio }}</td><td class="col-qty">{{ servicios.empty_form.cantidad }}</td></tr>
+  </template>
+  <p><button class="btn btn-sm" type="button" data-agregar="{{ servicios.prefix }}">+ Agregar servicio</button></p>
+
+  <h2>Detalles</h2>
+  <div class="two-cols">
+    {% for field in form %}
+    <div class="field{% if field.name == 'notas' %} full{% endif %}">
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {{ field.errors }}
+    </div>
+    {% endfor %}
+  </div>
+  <div class="actions">
+    <button class="btn btn-primary" type="submit">Enviar solicitud</button>
+    <a class="btn" href="{% url 'catalogo' %}">Volver al catálogo</a>
+  </div>
+</form>
+{% endblock %}
+{% block extra_js %}<script src="{% static 'js/formset.js' %}"></script>{% endblock %}

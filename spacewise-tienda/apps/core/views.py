@@ -29,6 +29,7 @@ def dashboard(request):
         fila(Cotizacion.Estado.APROBADA, "Aprobadas", "file-text", "indigo"),
         fila(Cotizacion.Estado.RECHAZADA, "Rechazadas", "check", "green"),
         fila(Cotizacion.Estado.PENDIENTE, "Pendientes", "clock", "amber"),
+        fila(Cotizacion.Estado.SOLICITADA, "Solicitadas por clientes", "users", "indigo"),
     ]
 
     return render(
@@ -36,7 +37,10 @@ def dashboard(request):
         "core/dashboard.html",
         {
             "clientes_total": Cliente.objects.count(),
-            "cotizaciones_abiertas": Cotizacion.objects.filter(estado=Cotizacion.Estado.PENDIENTE).count(),
+            "cotizaciones_abiertas": Cotizacion.objects.filter(
+                estado__in=[Cotizacion.Estado.SOLICITADA, Cotizacion.Estado.PENDIENTE]
+            ).count(),
+            "solicitudes_total": Cotizacion.objects.filter(estado=Cotizacion.Estado.SOLICITADA).count(),
             # "Compras" = pedidos de la tienda que no se cancelaron.
             "compras_registradas": Pedido.objects.exclude(estado=Pedido.Estado.CANCELADO).count(),
             "vendedores_activos": Vendedor.objects.filter(user__is_active=True).count(),

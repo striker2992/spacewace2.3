@@ -1,0 +1,52 @@
+{% extends "base_publico.html" %}
+{% block title %}Cotización {{ cotizacion.numero }} · SpaceWise{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="{% url 'tienda:mis_cotizaciones' %}">Mis cotizaciones</a> &rsaquo; {{ cotizacion.numero }}</div>
+<div class="page-title">
+  <div>
+    <h1>{{ cotizacion.numero }} <span class="badge {{ cotizacion.badge }}" style="vertical-align:middle">{{ cotizacion.get_estado_display }}</span></h1>
+    <p>Creada el {{ cotizacion.fecha|date:"d/m/Y" }}</p>
+  </div>
+</div>
+
+<section class="card">
+  <ol class="order-flow" aria-label="Estado de la cotización">
+    {% for clave, etiqueta, hecho in cotizacion.flujo %}
+    <li class="{{ hecho }}">{{ etiqueta }}</li>
+    {% endfor %}
+  </ol>
+  <p class="muted" style="margin:16px 0 0;text-align:center">
+    {% if cotizacion.estado == "solicitada" %}Recibimos tu solicitud. Nuestro equipo la está valorizando.
+    {% elif cotizacion.estado == "pendiente" %}Tu cotización ya tiene valores y está en revisión para su aprobación.
+    {% elif cotizacion.estado == "aprobada" %}¡Tu cotización fue aprobada! Te contactaremos para coordinar.
+    {% else %}Esta cotización fue rechazada. Puedes solicitar una nueva cuando quieras.{% endif %}
+  </p>
+</section>
+
+<section class="card">
+  <h2>Detalle</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ÍTEM</th><th class="num">CANTIDAD</th><th class="num">PRECIO UNIT.</th><th class="num">SUBTOTAL</th></tr></thead>
+      <tbody>
+      {% for i in cotizacion.items.all %}
+        <tr><td>{{ i.contenedor.nombre }} <small class="muted">· {{ i.contenedor.get_tipo_display }}</small></td><td class="num">{{ i.cantidad }}</td><td class="num">${{ i.precio_unitario|floatformat:"0g" }}</td><td class="num">${{ i.subtotal|floatformat:"0g" }}</td></tr>
+      {% endfor %}
+      {% for s in cotizacion.servicios.all %}
+        <tr><td>{{ s.servicio.nombre }} <small class="muted">· servicio, por {{ s.servicio.unidad }}</small></td><td class="num">{{ s.cantidad }}</td><td class="num">${{ s.precio_unitario|floatformat:"0g" }}</td><td class="num">${{ s.subtotal|floatformat:"0g" }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="total-row"><span class="muted">{% if cotizacion.estado == "solicitada" %}Total referencial (por confirmar){% else %}Total{% endif %}</span> <strong>${{ cotizacion.total|floatformat:"0g" }}</strong></div>
+</section>
+
+{% if cotizacion.fecha_requerida or cotizacion.direccion_entrega or cotizacion.notas %}
+<section class="card">
+  <h2>Tu solicitud</h2>
+  {% if cotizacion.fecha_requerida %}<p style="margin:0 0 6px"><b>Para el:</b> {{ cotizacion.fecha_requerida|date:"d/m/Y" }}</p>{% endif %}
+  {% if cotizacion.direccion_entrega %}<p style="margin:0 0 6px"><b>Entrega en:</b> {{ cotizacion.direccion_entrega }}</p>{% endif %}
+  {% if cotizacion.notas %}<p style="margin:0"><b>Comentarios:</b> {{ cotizacion.notas|linebreaksbr }}</p>{% endif %}
+</section>
+{% endif %}
+{% endblock %}

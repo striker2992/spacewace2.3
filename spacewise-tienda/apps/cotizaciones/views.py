@@ -38,6 +38,11 @@ class CotizacionLista(PersonalRequeridoMixin, QueryStringMixin, ListView):
         ctx["q"] = self.request.GET.get("q", "")
         ctx["estado"] = self.request.GET.get("estado", "")
         ctx["estados"] = Cotizacion.Estado.choices
+        # Bandeja: cantidad por estado (las solicitadas son las que esperan valorización)
+        ctx["por_estado"] = [
+            {"valor": v, "etiqueta": e, "n": Cotizacion.objects.filter(estado=v).count()}
+            for v, e in Cotizacion.Estado.choices
+        ]
         return ctx
 
 

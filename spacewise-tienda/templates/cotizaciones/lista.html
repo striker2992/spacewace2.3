@@ -2,10 +2,15 @@
 {% block title %}Cotizaciones · SpaceWise{% endblock %}
 {% block content %}
 <div class="page-title">
-  <div><h1>Cotizaciones</h1><p>Propuestas enviadas a clientes y su estado.</p></div>
+  <div><h1>Bandeja de cotizaciones</h1><p>Solicitudes de clientes por valorizar y cotizaciones en curso.</p></div>
   <a class="btn btn-primary" href="{% url 'cotizaciones:crear' %}">+ Nueva cotización</a>
 </div>
 <section class="card">
+  <div class="stats" style="margin-bottom:18px">
+    {% for r in por_estado %}
+    <a class="stat" href="?estado={{ r.valor }}" style="color:inherit;text-decoration:none{% if r.valor == estado %};border-color:var(--primary){% endif %}"><small>{{ r.etiqueta }}{% if r.valor == "solicitada" %} · por valorizar{% endif %}</small><strong>{{ r.n }}</strong></a>
+    {% endfor %}
+  </div>
   <div class="toolbar">
     <form method="get">
       <input type="search" name="q" value="{{ q }}" placeholder="Cliente o RUT" aria-label="Buscar">
@@ -24,12 +29,12 @@
       {% for c in cotizaciones %}
         <tr>
           <td><a href="{{ c.get_absolute_url }}"><b>{{ c.numero }}</b></a></td>
-          <td>{{ c.cliente.nombre }}</td>
+          <td>{{ c.cliente.nombre }}{% if c.origen == "web" %} <span class="badge info">Web</span>{% endif %}</td>
           <td>{{ c.fecha|date:"d/m/Y" }}</td>
           <td>{% if c.vendedor %}{{ c.vendedor.user.get_full_name|default:c.vendedor.user.username }}{% else %}—{% endif %}</td>
           <td class="num">${{ c.total|floatformat:"0g" }}</td>
           <td><span class="badge {{ c.badge }}">{{ c.get_estado_display }}</span></td>
-          <td class="num"><a class="btn btn-sm" href="{{ c.get_absolute_url }}">Ver</a></td>
+          <td class="num"><a class="btn btn-sm{% if c.estado == 'solicitada' %} btn-primary{% endif %}" href="{{ c.get_absolute_url }}">{% if c.estado == "solicitada" %}Valorizar{% else %}Ver{% endif %}</a></td>
         </tr>
       {% empty %}
         <tr><td colspan="7" class="empty">No hay cotizaciones que coincidan.</td></tr>

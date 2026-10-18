@@ -1,9 +1,11 @@
-"""Vistas para el cliente final: carrito, checkout y sus pedidos."""
+"""Vistas para el cliente final: carrito, checkout, sus pedidos y sus cotizaciones."""
 
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
 from django.http import Http404
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, FormView, ListView, TemplateView
@@ -13,8 +15,8 @@ from apps.contenedores.models import Contenedor
 from apps.core.mixins import SoloClientesMixin, solo_clientes
 
 from .carrito import CANTIDAD_MAXIMA, CarritoError, actualizar_item, agregar_item, obtener_carrito
-from .forms import CheckoutForm
-from .models import ItemCarrito, Pedido
+from .forms import CheckoutForm, SolicitudForm, SolicitudItemFormSet, SolicitudServicioFormSet
+from .models import Cotizacion, ItemCarrito, Pedido
 from .servicios import PedidoError, crear_pedido
 
 
@@ -174,3 +176,74 @@ class MisPedidosView(_PedidosDelUsuario, ListView):
 class MiPedidoDetalleView(_PedidosDelUsuario, DetailView):
     template_name = "cliente/detalle_pedido.html"
     context_object_name = "pedido"
+
+
+# ---------------------------------------------------------------------------
+# Cotizaciones del cliente: solicitar y seguir su estado
+# ---------------------------------------------------------------------------
+def _cliente_del_usuario(user):
+    """Perfil Cliente del usuario; se crea si la cuenta aún no tiene uno."""
+    cliente = Cliente.objects.filter(usuario=user).first()
+    if cliente is None:
+        cliente = Cliente.objects.create(
+            usuario=user, nombre=user.get_full_name() or user.username, email=user.email
+        )
+    return cliente
+
+
+@login_required
+@solo_clientes
+def solicitar_cotizacion(request):
+    """El cliente elige contenedores, servicios y cantidades; queda 'solicitada' en la bandeja del equipo."""
+    if request.method == "POST":
+        form = SolicitudForm(request.POST)
+        items = SolicitudItemFormSet(request.POST, instance=form.instance, prefix="items")
+        servicios = SolicitudServicioFormSet(request.POST, instance=form.instance, prefix="servicios")
+        if form.is_valid() and items.is_valid() and servicios.is_valid():
+            with transaction.atomic():
+                cot = form.save(commit=False)
+                cot.cliente = _cliente_del_usuario(request.user)
+                cot.estado = Cotizacion.Estado.SOLICITADA
+                cot.origen = Cotizacion.Origen.WEB
+                cot.save()
+                # Precio de catálogo como referencia; el equipo lo ajusta al valorizar.
+                for item in items.save(commit=False):
+                    item.cotizacion = cot
+                    item.precio_unitario = item.contenedor.precio
+                    item.save()
+                for serv in servicios.save(commit=False):
+                    serv.cotizacion = cot
+                    serv.precio_unitario = serv.servicio.precio
+                    serv.save()
+            messages.success(
+                request, f"Recibimos tu solicitud {cot.numero}. Te avisaremos cuando esté valorizada."
+            )
+            return redirect("tienda:detalle_cotizacion", pk=cot.pk)
+    else:
+        form = SolicitudForm()
+        contenedor_id = request.GET.get("contenedor", "")
+        inicial = [{"contenedor": int(contenedor_id)}] if contenedor_id.isdigit() else None
+        items = SolicitudItemFormSet(instance=form.instance, prefix="items", initial=inicial)
+        servicios = SolicitudServicioFormSet(instance=form.instance, prefix="servicios")
+    return render(
+        request, "cliente/solicitar_cotizacion.html",
+        {"form": form, "formset": items, "servicios": servicios},
+    )
+
+
+class _CotizacionesDelUsuario(LoginRequiredMixin):
+    def get_queryset(self):
+        return Cotizacion.objects.filter(cliente__usuario=self.request.user).prefetch_related(
+            "items__contenedor", "servicios__servicio"
+        )
+
+
+class MisCotizacionesView(_CotizacionesDelUsuario, ListView):
+    template_name = "cliente/mis_cotizaciones.html"
+    context_object_name = "cotizaciones"
+    paginate_by = 10
+
+
+class MiCotizacionDetalleView(_CotizacionesDelUsuario, DetailView):
+    template_name = "cliente/detalle_cotizacion.html"
+    context_object_name = "cotizacion"

@@ -1,6 +1,6 @@
 from django.contrib import admin, messages
 
-from .models import Carrito, Cotizacion, CotizacionItem, ItemCarrito, ItemPedido, Pedido
+from .models import Carrito, Cotizacion, CotizacionItem, CotizacionServicio, ItemCarrito, ItemPedido, Pedido
 from .servicios import PedidoError, cambiar_estado_pedido
 
 
@@ -9,11 +9,16 @@ class ItemInline(admin.TabularInline):
     extra = 0
 
 
+class ServicioInline(admin.TabularInline):
+    model = CotizacionServicio
+    extra = 0
+
+
 @admin.register(Cotizacion)
 class CotizacionAdmin(admin.ModelAdmin):
     list_display = ("numero", "cliente", "estado", "fecha")
     list_filter = ("estado",)
-    inlines = [ItemInline]
+    inlines = [ItemInline, ServicioInline]
 
 
 class ItemPedidoInline(admin.TabularInline):

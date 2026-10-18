@@ -16,7 +16,8 @@
     <nav class="pub-nav" aria-label="Principal">
       {% if es_personal %}
       <a href="{% url 'dashboard' %}" class="{% if url == 'dashboard' %}active{% endif %}">Panel</a>
-      <a href="{% url 'contenedores:lista' %}" class="{% if ns == 'contenedores' %}active{% endif %}">Contenedores</a>
+      <a href="{% url 'contenedores:lista' %}" class="{% if ns == 'contenedores' and 'servicio' not in url %}active{% endif %}">Contenedores</a>
+      <a href="{% url 'contenedores:servicio_lista' %}" class="{% if ns == 'contenedores' and 'servicio' in url %}active{% endif %}">Servicios</a>
       <a href="{% url 'vendedores:pedidos' %}" class="{% if ns == 'vendedores' %}active{% endif %}">Pedidos{% if pedidos_pendientes %} <span class="nav-badge" title="Pedidos pendientes">{{ pedidos_pendientes }}</span>{% endif %}</a>
       <a href="{% url 'cotizaciones:lista' %}" class="{% if ns == 'cotizaciones' %}active{% endif %}">Cotizaciones</a>
       <a href="{% url 'clientes:lista' %}" class="{% if ns == 'clientes' %}active{% endif %}">Clientes</a>

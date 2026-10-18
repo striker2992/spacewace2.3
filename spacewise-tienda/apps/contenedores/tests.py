@@ -111,3 +111,59 @@ class EstadoContenedorTests(TestCase):
         self.client.post(reverse("tienda:agregar", args=[self.taller.pk]), {"cantidad": 1})
         resp = self.client.get(reverse("tienda:carrito"))
         self.assertNotContains(resp, "En taller")
+
+
+class ServiciosYOficinasTests(TestCase):
+    """Servicios adicionales en el catálogo y en las cotizaciones; contenedores tipo oficina."""
+
+    @classmethod
+    def setUpTestData(cls):
+        from .models import Servicio
+
+        User = get_user_model()
+        cls.staff = User.objects.create_user("jefe", password="clave-de-prueba-123", is_staff=True)
+        cls.oficina = Contenedor.objects.create(nombre="Oficina modular", tipo="20OF", precio=9000, stock=2)
+        cls.dry = Contenedor.objects.create(nombre="Dry común", tipo="40DC", precio=5000, stock=2)
+        cls.transporte = Servicio.objects.create(nombre="Transporte", precio=1200, unidad="km")
+        cls.oculto = Servicio.objects.create(nombre="Servicio retirado", precio=10, activo=False)
+
+    def test_catalogo_filtra_oficinas_y_muestra_servicios_activos(self):
+        resp = self.client.get(reverse("catalogo"), {"tipo": "20OF"})
+        self.assertContains(resp, "Oficina modular")
+        self.assertNotContains(resp, "Dry común")
+        self.assertContains(resp, "Transporte")
+        self.assertNotContains(resp, "Servicio retirado")
+
+    def test_crud_de_servicios(self):
+        from .models import Servicio
+
+        self.client.force_login(self.staff)
+        self.assertEqual(self.client.get(reverse("contenedores:servicio_lista")).status_code, 200)
+        self.client.post(reverse("contenedores:servicio_crear"),
+                         {"nombre": "Instalación", "precio": "3500", "unidad": "servicio", "descripcion": "", "activo": "on"})
+        s = Servicio.objects.get(nombre="Instalación")
+        self.client.post(reverse("contenedores:servicio_editar", args=[s.pk]),
+                         {"nombre": "Instalación", "precio": "4000", "unidad": "servicio", "descripcion": ""})
+        s.refresh_from_db()
+        self.assertEqual((s.precio, s.activo), (4000, False))
+        self.client.post(reverse("contenedores:servicio_eliminar", args=[s.pk]))
+        self.assertFalse(Servicio.objects.filter(pk=s.pk).exists())
+
+    def test_cotizacion_con_contenedor_y_servicio(self):
+        from apps.clientes.models import Cliente
+        from apps.cotizaciones.models import Cotizacion
+
+        cliente = Cliente.objects.create(nombre="Obras Norte")
+        self.client.force_login(self.staff)
+        datos = {
+            "cliente": cliente.pk, "fecha": "2026-10-18", "notas": "",
+            "items-TOTAL_FORMS": "1", "items-INITIAL_FORMS": "0", "items-MIN_NUM_FORMS": "1", "items-MAX_NUM_FORMS": "1000",
+            "items-0-contenedor": self.oficina.pk, "items-0-cantidad": "1", "items-0-precio_unitario": "",
+            "servicios-TOTAL_FORMS": "1", "servicios-INITIAL_FORMS": "0", "servicios-MIN_NUM_FORMS": "0", "servicios-MAX_NUM_FORMS": "1000",
+            "servicios-0-servicio": self.transporte.pk, "servicios-0-cantidad": "10", "servicios-0-precio_unitario": "",
+        }
+        resp = self.client.post(reverse("cotizaciones:crear"), datos)
+        cot = Cotizacion.objects.get(cliente=cliente)
+        self.assertRedirects(resp, cot.get_absolute_url(), fetch_redirect_response=False)
+        self.assertEqual(cot.total, 9000 + 10 * 1200)
+        self.assertContains(self.client.get(cot.get_absolute_url()), "Transporte")

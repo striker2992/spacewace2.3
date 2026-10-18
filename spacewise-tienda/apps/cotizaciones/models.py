@@ -39,8 +39,10 @@ class Cotizacion(models.Model):
 
     @property
     def total(self):
-        # usa items.all() para aprovechar prefetch_related("items")
-        return sum(item.subtotal for item in self.items.all())
+        # usa .all() para aprovechar prefetch_related("items", "servicios")
+        return sum(item.subtotal for item in self.items.all()) + sum(
+            s.subtotal for s in self.servicios.all()
+        )
 
     @property
     def badge(self):
@@ -58,6 +60,20 @@ class CotizacionItem(models.Model):
 
     def __str__(self):
         return f"{self.cantidad} × {self.contenedor.nombre}"
+
+    @property
+    def subtotal(self):
+        return self.cantidad * self.precio_unitario
+
+
+class CotizacionServicio(models.Model):
+    cotizacion = models.ForeignKey(Cotizacion, on_delete=models.CASCADE, related_name="servicios")
+    servicio = models.ForeignKey("contenedores.Servicio", on_delete=models.PROTECT)
+    cantidad = models.PositiveIntegerField(default=1)
+    precio_unitario = models.DecimalField(max_digits=12, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.cantidad} × {self.servicio.nombre}"
 
     @property
     def subtotal(self):

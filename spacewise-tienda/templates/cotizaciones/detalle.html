@@ -37,8 +37,30 @@
       </tbody>
     </table>
   </div>
-  <div class="total-row"><span class="muted">Total</span> <strong>${{ cotizacion.total|floatformat:"0g" }}</strong></div>
+  {% if not cotizacion.servicios.all %}<div class="total-row"><span class="muted">Total</span> <strong>${{ cotizacion.total|floatformat:"0g" }}</strong></div>{% endif %}
 </section>
+
+{% if cotizacion.servicios.all %}
+<section class="card">
+  <h2>Servicios</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>SERVICIO</th><th class="num">CANTIDAD</th><th class="num">PRECIO UNIT.</th><th class="num">SUBTOTAL</th></tr></thead>
+      <tbody>
+      {% for s in cotizacion.servicios.all %}
+        <tr>
+          <td>{{ s.servicio.nombre }} <small class="muted">· por {{ s.servicio.unidad }}</small></td>
+          <td class="num">{{ s.cantidad }}</td>
+          <td class="num">${{ s.precio_unitario|floatformat:"0g" }}</td>
+          <td class="num">${{ s.subtotal|floatformat:"0g" }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="total-row"><span class="muted">Total (contenedores + servicios)</span> <strong>${{ cotizacion.total|floatformat:"0g" }}</strong></div>
+</section>
+{% endif %}
 
 {% if cotizacion.notas %}<section class="card"><h2>Notas</h2><p style="margin:0">{{ cotizacion.notas|linebreaksbr }}</p></section>{% endif %}
 {% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Servicios · SpaceWise{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div><h1>Servicios adicionales</h1><p>Transporte, instalación, modificaciones y otros servicios que se pueden cotizar.</p></div>
+  <a class="btn btn-primary" href="{% url 'contenedores:servicio_crear' %}">+ Nuevo servicio</a>
+</div>
+<section class="card">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>SERVICIO</th><th class="num">PRECIO REFERENCIAL</th><th>CATÁLOGO</th><th class="num">ACCIONES</th></tr></thead>
+      <tbody>
+      {% for s in servicios %}
+        <tr>
+          <td><b>{{ s.nombre }}</b>{% if s.descripcion %}<br><small class="muted">{{ s.descripcion|truncatechars:90 }}</small>{% endif %}</td>
+          <td class="num">${{ s.precio|floatformat:"0g" }} <small class="muted">/ {{ s.unidad }}</small></td>
+          <td>{% if s.activo %}<span class="badge ok">Visible</span>{% else %}<span class="badge">Oculto</span>{% endif %}</td>
+          <td class="num"><div class="actions">
+            <a class="btn btn-sm" href="{% url 'contenedores:servicio_editar' s.pk %}">Editar</a>
+            <a class="btn btn-sm btn-danger" href="{% url 'contenedores:servicio_eliminar' s.pk %}" aria-label="Eliminar {{ s.nombre }}">{% icon "trash" %}</a>
+          </div></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="4" class="empty">No hay servicios. <a href="{% url 'contenedores:servicio_crear' %}">Agrega el primero</a>.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

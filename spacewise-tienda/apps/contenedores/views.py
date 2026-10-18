@@ -6,8 +6,8 @@ from django.views.generic import CreateView, DeleteView, DetailView, ListView, U
 
 from apps.core.mixins import BorrarMixin, FormularioMixin, PersonalRequeridoMixin, QueryStringMixin
 
-from .forms import ContenedorForm
-from .models import Contenedor
+from .forms import ContenedorForm, ServicioForm
+from .models import Contenedor, Servicio
 
 
 # ---------------------------------------------------------------------------
@@ -67,6 +67,34 @@ class ContenedorEliminar(BorrarMixin, DeleteView):
     model = Contenedor
     success_url = reverse_lazy("contenedores:lista")
     success_message = "Contenedor eliminado."
+
+
+class ServicioLista(PersonalRequeridoMixin, ListView):
+    model = Servicio
+    template_name = "contenedores/servicios.html"
+    context_object_name = "servicios"
+
+
+class ServicioCrear(FormularioMixin, CreateView):
+    model = Servicio
+    form_class = ServicioForm
+    success_url = reverse_lazy("contenedores:servicio_lista")
+    success_message = "Servicio creado."
+    titulo = "Nuevo servicio"
+
+
+class ServicioEditar(FormularioMixin, UpdateView):
+    model = Servicio
+    form_class = ServicioForm
+    success_url = reverse_lazy("contenedores:servicio_lista")
+    success_message = "Servicio actualizado."
+    titulo = "Editar servicio"
+
+
+class ServicioEliminar(BorrarMixin, DeleteView):
+    model = Servicio
+    success_url = reverse_lazy("contenedores:servicio_lista")
+    success_message = "Servicio eliminado."
 
 
 # ---------------------------------------------------------------------------
@@ -138,6 +166,7 @@ class CatalogoView(QueryStringMixin, ListView):
             tamanos=self.TAMANOS,
             condiciones=Contenedor.Condicion.choices,
             estados=Contenedor.Estado.choices,
+            servicios=Servicio.objects.filter(activo=True),
         )
         ctx["hay_filtros"] = any(
             [ctx["q"], ctx["tipo"], ctx["tamano"], ctx["condicion"], ctx["estado"],

@@ -97,4 +97,20 @@
   {% endfor %}
 </div>
 {% include "_pagination.html" %}
+
+{% if servicios %}
+<section class="card">
+  <h2>Servicios adicionales</h2>
+  <p class="muted" style="margin:-8px 0 14px">Complementa tu contenedor. Precios referenciales; se confirman en la cotización.</p>
+  <div class="serv-grid">
+    {% for s in servicios %}
+    <div class="serv">
+      <b>{{ s.nombre }}</b>
+      {% if s.descripcion %}<p class="prod-desc">{{ s.descripcion }}</p>{% endif %}
+      <span class="serv-precio">${{ s.precio|floatformat:"0g" }} <small>/ {{ s.unidad }}</small></span>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
 {% endblock %}

@@ -9,16 +9,24 @@
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
 </head>
 <body>
-{% with url=request.resolver_match.url_name %}
+{% with ns=request.resolver_match.namespace url=request.resolver_match.url_name %}
 <header class="pub-header">
   <div class="pub-bar">
-    <a class="brand" href="{% url 'catalogo' %}"><span class="logo">{% icon "box" %}</span> SpaceWise</a>
+    <a class="brand" href="{% if es_personal %}{% url 'dashboard' %}{% else %}{% url 'catalogo' %}{% endif %}"><span class="logo">{% icon "box" %}</span> SpaceWise</a>
     <nav class="pub-nav" aria-label="Principal">
+      {% if es_personal %}
+      <a href="{% url 'dashboard' %}" class="{% if url == 'dashboard' %}active{% endif %}">Panel</a>
+      <a href="{% url 'contenedores:lista' %}" class="{% if ns == 'contenedores' %}active{% endif %}">Contenedores</a>
+      <a href="{% url 'vendedores:pedidos' %}" class="{% if ns == 'vendedores' %}active{% endif %}">Pedidos{% if pedidos_pendientes %} <span class="nav-badge" title="Pedidos pendientes">{{ pedidos_pendientes }}</span>{% endif %}</a>
+      <a href="{% url 'cotizaciones:lista' %}" class="{% if ns == 'cotizaciones' %}active{% endif %}">Cotizaciones</a>
+      <a href="{% url 'clientes:lista' %}" class="{% if ns == 'clientes' %}active{% endif %}">Clientes</a>
       <a href="{% url 'catalogo' %}" class="{% if url == 'catalogo' or url == 'detalle_contenedor' %}active{% endif %}">Catálogo</a>
-      {% if user.is_authenticated and not es_personal %}
+      {% else %}
+      <a href="{% url 'catalogo' %}" class="{% if url == 'catalogo' or url == 'detalle_contenedor' %}active{% endif %}">Catálogo</a>
+      {% if user.is_authenticated %}
       <a href="{% url 'tienda:mis_pedidos' %}" class="{% if url == 'mis_pedidos' or url == 'detalle_pedido' %}active{% endif %}">Mis pedidos</a>
       {% endif %}
-      {% if es_personal %}<a href="{% url 'dashboard' %}">Panel</a>{% endif %}
+      {% endif %}
     </nav>
     <div class="pub-actions">
       {% if not es_personal %}

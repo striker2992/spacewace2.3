@@ -1,42 +1,13 @@
 from django.contrib import messages
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse_lazy
 from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_POST
-from django.views.generic import CreateView, DetailView, ListView, UpdateView
+from django.views.generic import DetailView, ListView
 
-from apps.core.mixins import FormularioMixin, PersonalRequeridoMixin, QueryStringMixin, personal_requerido
+from apps.core.mixins import PersonalRequeridoMixin, QueryStringMixin, personal_requerido
 from apps.cotizaciones.models import Pedido
 from apps.cotizaciones.servicios import PedidoError, cambiar_estado_pedido
-
-from .forms import VendedorCrearForm, VendedorEditarForm
-from .models import Vendedor
-
-
-class VendedorLista(PersonalRequeridoMixin, ListView):
-    model = Vendedor
-    template_name = "vendedores/lista.html"
-    context_object_name = "vendedores"
-
-    def get_queryset(self):
-        return Vendedor.objects.select_related("user")
-
-
-class VendedorCrear(FormularioMixin, CreateView):
-    model = Vendedor
-    form_class = VendedorCrearForm
-    success_url = reverse_lazy("vendedores:lista")
-    success_message = "Vendedor creado."
-    titulo = "Nuevo vendedor"
-
-
-class VendedorEditar(FormularioMixin, UpdateView):
-    model = Vendedor
-    form_class = VendedorEditarForm
-    success_url = reverse_lazy("vendedores:lista")
-    success_message = "Vendedor actualizado."
-    titulo = "Editar vendedor"
 
 
 # ---------------------------------------------------------------------------

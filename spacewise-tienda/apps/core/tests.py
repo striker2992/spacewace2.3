@@ -5,8 +5,8 @@ from django.urls import reverse
 from apps.vendedores.models import Vendedor
 
 PANTALLAS_INTERNAS = [
-    "dashboard", "clientes:lista", "cotizaciones:lista", "operaciones:lista",
-    "contenedores:lista", "vendedores:lista", "vendedores:pedidos",
+    "dashboard", "clientes:lista", "cotizaciones:lista",
+    "contenedores:lista", "vendedores:pedidos",
 ]
 
 

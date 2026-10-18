@@ -8,8 +8,6 @@ from django.views.generic import CreateView, DeleteView, DetailView, ListView, U
 
 from apps.core.mixins import BorrarMixin, FormularioMixin, PersonalRequeridoMixin, QueryStringMixin
 
-#from apps.operaciones.models import Operacion
-
 from .forms import ClienteForm, RegistroForm
 from .models import Cliente
 
@@ -42,36 +40,10 @@ class ClienteDetalle(PersonalRequeridoMixin, DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         cliente = self.object
-        cotizaciones = list(cliente.cotizaciones.prefetch_related("items")[:5])
-        operaciones = list(cliente.operaciones.select_related("contenedor")[:5])
-
-        actividad = [
-            {
-                "titulo": f"Cotización {c.numero}",
-                "detalle": c.get_estado_display(),
-                "fecha": c.fecha,
-                "url": c.get_absolute_url(),
-            }
-            for c in cotizaciones
-        ] + [
-            {
-                "titulo": f"{o.get_tipo_display()} · {o.cantidad} u.",
-                "detalle": o.get_estado_display(),
-                "fecha": o.fecha,
-                "url": "",
-            }
-            for o in operaciones
-        ]
-        actividad.sort(key=lambda a: a["fecha"], reverse=True)
-
+        ctx["cotizaciones"] = cliente.cotizaciones.prefetch_related("items")[:5]
+        ctx["pedidos"] = cliente.pedidos.all()[:5]
         ctx["n_cotizaciones"] = cliente.cotizaciones.count()
-        ctx["n_compras"] = cliente.operaciones.exclude(
-            tipo=Operacion.Tipo.DEVOLUCION
-        ).count()
-        ctx["n_devoluciones"] = cliente.operaciones.filter(
-            tipo=Operacion.Tipo.DEVOLUCION
-        ).count()
-        ctx["actividad"] = actividad[:6]
+        ctx["n_pedidos"] = cliente.pedidos.count()
         return ctx
 
 

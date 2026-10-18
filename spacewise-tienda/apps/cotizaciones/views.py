@@ -8,7 +8,6 @@ from django.views.decorators.http import require_POST
 from django.views.generic import DeleteView, DetailView, ListView
 
 from apps.core.mixins import BorrarMixin, PersonalRequeridoMixin, QueryStringMixin, personal_requerido
-from apps.operaciones.models import Operacion
 from apps.vendedores.models import Vendedor
 
 from .forms import CotizacionForm, ItemFormSet
@@ -67,7 +66,10 @@ def _guardar(request, instance=None):
             messages.success(request, "Cotización guardada.")
             return redirect(cot)
     else:
-        form = CotizacionForm(instance=instance)
+        # Desde la ficha del cliente llega ?cliente=<id> para dejarlo preseleccionado
+        cliente_id = request.GET.get("cliente", "")
+        inicial = {"cliente": int(cliente_id)} if instance is None and cliente_id.isdigit() else None
+        form = CotizacionForm(instance=instance, initial=inicial)
         initial_items = None
         contenedor_id = request.GET.get("contenedor", "")
         if instance is None and contenedor_id.isdigit():
@@ -105,21 +107,8 @@ def cotizacion_estado(request, pk):
     if nuevo not in Cotizacion.Estado.values:
         return HttpResponseBadRequest("Estado inválido")
 
-    with transaction.atomic():
-        cot.estado = nuevo
-        cot.save(update_fields=["estado"])
-        # Al aprobar, se registra una compra pendiente por cada ítem (solo una vez)
-        if nuevo == Cotizacion.Estado.APROBADA and not cot.operaciones.exists():
-            for item in cot.items.select_related("contenedor"):
-                Operacion.objects.create(
-                    cliente=cot.cliente,
-                    tipo=Operacion.Tipo.VENTA,
-                    cantidad=item.cantidad,
-                    estado=Operacion.Estado.PENDIENTE,
-                    contenedor=item.contenedor,
-                    cotizacion=cot,
-                    vendedor=cot.vendedor,
-                )
+    cot.estado = nuevo
+    cot.save(update_fields=["estado"])
     messages.success(request, f"Cotización {cot.numero}: {cot.get_estado_display().lower()}.")
     return redirect(cot)
 

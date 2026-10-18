@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}{{ cliente.nombre }} · SpaceWise{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="{% url 'clientes:lista' %}">Clientes</a> &rsaquo; {{ cliente.nombre }}</div>
+<div class="page-title">
+  <div><h1>{{ cliente.nombre }}</h1><p>{{ cliente.razon_social|default:"Sin razón social" }}</p></div>
+  <div class="actions">
+    <a class="btn btn-primary" href="{% url 'cotizaciones:crear' %}?cliente={{ cliente.pk }}">+ Nueva cotización</a>
+    <a class="btn" href="{% url 'clientes:editar' cliente.pk %}">Editar</a>
+    <a class="btn btn-danger" href="{% url 'clientes:eliminar' cliente.pk %}">{% icon "trash" %} Eliminar</a>
+  </div>
+</div>
+
+<div class="grid-2">
+  <section class="card">
+    <h2>Datos</h2>
+    <div class="kv"><span class="chip">{% icon "user" %}</span><b>RUT</b><span class="val">{{ cliente.rut|default:"—" }}</span></div>
+    <div class="kv"><span class="chip">{% icon "file-text" %}</span><b>Correo</b><span class="val">{{ cliente.email|default:"—" }}</span></div>
+    <div class="kv"><span class="chip">{% icon "clipboard" %}</span><b>Teléfono</b><span class="val">{{ cliente.telefono|default:"—" }}</span></div>
+    <div class="kv"><span class="chip">{% icon "home" %}</span><b>Dirección</b><span class="val">{{ cliente.direccion|default:"—" }}</span></div>
+    {% if cliente.informacion_general %}<p class="muted" style="margin:14px 0 0">{{ cliente.informacion_general|linebreaksbr }}</p>{% endif %}
+  </section>
+  <section class="card">
+    <div class="stats" style="grid-template-columns:1fr 1fr;margin-bottom:18px">
+      <div class="stat"><span class="chip tone-green">{% icon "file-text" %}</span><small>Cotizaciones</small><strong>{{ n_cotizaciones }}</strong></div>
+      <div class="stat"><span class="chip tone-amber">{% icon "cart" %}</span><small>Pedidos web</small><strong>{{ n_pedidos }}</strong></div>
+    </div>
+    <h2>Actividad reciente</h2>
+    {% for c in cotizaciones %}
+    <a class="recent" href="{{ c.get_absolute_url }}"><span><b>{{ c.numero }}</b><small>{{ c.fecha|date:"d/m/Y" }} · {{ c.get_estado_display }}</small></span><b>${{ c.total|floatformat:"0g" }}</b></a>
+    {% endfor %}
+    {% for p in pedidos %}
+    <a class="recent" href="{% url 'vendedores:detalle_pedido' p.pk %}"><span><b>{{ p.numero_pedido }}</b><small>{{ p.fecha_creacion|date:"d/m/Y" }} · {{ p.get_estado_display }}</small></span><b>${{ p.total|floatformat:"0g" }}</b></a>
+    {% endfor %}
+    {% if not cotizaciones and not pedidos %}<p class="muted">Sin actividad todavía.</p>{% endif %}
+  </section>
+</div>
+{% endblock %}

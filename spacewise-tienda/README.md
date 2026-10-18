@@ -37,19 +37,20 @@ El archivo `.env` está en `.gitignore`: **nunca subas contraseñas al repositor
 
 | Ruta             | Qué hace                                                             |
 |------------------|----------------------------------------------------------------------|
-| `/`              | Dashboard con totales, resumen de cotizaciones y últimas solicitudes |
-| `/clientes/`     | CRUD + detalle con historial y actividad                             |
-| `/cotizaciones/` | Cotizaciones con varios contenedores; aprobar/rechazar               |
-| `/catalogo/`     | **Público.** Tarjetas con filtros (tipo, tamaño, estado, precio, stock) y botón **Agregar al carrito**; `/catalogo/<id>/` es la ficha |
+| `/`              | Clientes y visitas ven el catálogo; el equipo interno va al panel   |
+| `/catalogo/`     | **Público.** Tarjetas con filtros y botón **Agregar al carrito**; `/catalogo/<id>/` es la ficha. El equipo interno ve **Cotizar** en vez de comprar |
 | `/carrito/`      | **Público.** Carrito en sesión; al iniciar sesión se fusiona con el del usuario |
-| `/carrito/checkout/` | Requiere login (`/accounts/login/?next=...`). Confirma entrega/contacto y crea el pedido |
+| `/carrito/checkout/` | Requiere login. Confirma entrega/contacto y crea el pedido |
 | `/pedidos/`      | Historial de pedidos del cliente |
 | `/accounts/registro/` | Crear cuenta de cliente (User + perfil con RUT, teléfono, empresa, dirección) |
-| `/vendedores/pedidos/` | Panel interno: revisar pedidos web y cambiar su estado |
-| `/compras/`      | Ventas, compras y devoluciones                                       |
-| `/contenedores/` | Administración de contenedores (precio, stock, ubicación)            |
-| `/vendedores/`   | Equipo comercial (cada vendedor es un usuario)                       |
-| `/admin/`        | Panel de administración de Django                                    |
+| `/panel/`        | Panel del equipo interno: totales, resumen de cotizaciones y últimos pedidos |
+| `/panel/contenedores/` | Agregar, editar y eliminar contenedores (precio, stock, foto, visibilidad) |
+| `/panel/pedidos/` | Revisar pedidos web y cambiar su estado |
+| `/panel/cotizaciones/` | Cotizaciones con varios contenedores; aprobar/rechazar |
+| `/panel/clientes/` | CRUD de clientes con su actividad |
+| `/admin/`        | Django Admin: no se enlaza desde la app, solo para mantenimiento |
+
+El equipo interno (admins y vendedores) **no puede comprar** en la tienda: carrito y checkout lo devuelven al panel.
 
 ### Pedidos de la tienda
 

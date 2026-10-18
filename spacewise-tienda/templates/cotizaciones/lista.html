@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Cotizaciones · SpaceWise{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div><h1>Cotizaciones</h1><p>Propuestas enviadas a clientes y su estado.</p></div>
+  <a class="btn btn-primary" href="{% url 'cotizaciones:crear' %}">+ Nueva cotización</a>
+</div>
+<section class="card">
+  <div class="toolbar">
+    <form method="get">
+      <input type="search" name="q" value="{{ q }}" placeholder="Cliente o RUT" aria-label="Buscar">
+      <select name="estado" onchange="this.form.submit()" aria-label="Filtrar por estado">
+        <option value="">Todos los estados</option>
+        {% for value, label in estados %}<option value="{{ value }}" {% if value == estado %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+      <button class="btn" type="submit">Filtrar</button>
+      {% if q or estado %}<a class="btn" href="{% url 'cotizaciones:lista' %}">Limpiar</a>{% endif %}
+    </form>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>N.º</th><th>CLIENTE</th><th>FECHA</th><th>VENDEDOR</th><th class="num">TOTAL</th><th>ESTADO</th><th class="num">ACCIONES</th></tr></thead>
+      <tbody>
+      {% for c in cotizaciones %}
+        <tr>
+          <td><a href="{{ c.get_absolute_url }}"><b>{{ c.numero }}</b></a></td>
+          <td>{{ c.cliente.nombre }}</td>
+          <td>{{ c.fecha|date:"d/m/Y" }}</td>
+          <td>{% if c.vendedor %}{{ c.vendedor.user.get_full_name|default:c.vendedor.user.username }}{% else %}—{% endif %}</td>
+          <td class="num">${{ c.total|floatformat:"0g" }}</td>
+          <td><span class="badge {{ c.badge }}">{{ c.get_estado_display }}</span></td>
+          <td class="num"><a class="btn btn-sm" href="{{ c.get_absolute_url }}">Ver</a></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7" class="empty">No hay cotizaciones que coincidan.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "_pagination.html" %}
+</section>
+{% endblock %}

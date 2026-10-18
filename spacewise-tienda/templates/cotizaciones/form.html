@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}{{ titulo }} · SpaceWise{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="{{ cancel_url }}">Volver</a> &rsaquo; {{ titulo }}</div>
+<div class="page-title"><div><h1>{{ titulo }}</h1></div></div>
+
+<form method="post" class="card" novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="alert-form">{{ form.non_field_errors }}</div>{% endif %}
+  <div class="two-cols">
+    {% for field in form %}
+    <div class="field{% if field.name == 'notas' %} full{% endif %}">
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {{ field.errors }}
+    </div>
+    {% endfor %}
+  </div>
+
+  <h2>Contenedores</h2>
+  <p class="muted" style="margin-top:-8px">Si dejas el precio vacío se usa el precio del catálogo.</p>
+  {{ formset.management_form }}
+  {% if formset.non_form_errors %}<div class="alert-form">{{ formset.non_form_errors }}</div>{% endif %}
+  <div class="table-wrap">
+    <table class="items-table">
+      <thead><tr><th>CONTENEDOR</th><th class="col-qty">CANTIDAD</th><th class="col-price">PRECIO UNIT.</th><th class="col-del">QUITAR</th></tr></thead>
+      <tbody id="items">
+      {% for f in formset %}
+        <tr>
+          <td>{% for h in f.hidden_fields %}{{ h }}{% endfor %}{{ f.contenedor }}{{ f.contenedor.errors }}</td>
+          <td class="col-qty">{{ f.cantidad }}{{ f.cantidad.errors }}</td>
+          <td class="col-price">{{ f.precio_unitario }}{{ f.precio_unitario.errors }}</td>
+          <td class="col-del">{% if f.instance.pk %}{{ f.DELETE }}{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <template id="item-vacio">
+    <tr>
+      <td>{% for h in formset.empty_form.hidden_fields %}{{ h }}{% endfor %}{{ formset.empty_form.contenedor }}</td>
+      <td class="col-qty">{{ formset.empty_form.cantidad }}</td>
+      <td class="col-price">{{ formset.empty_form.precio_unitario }}</td>
+      <td class="col-del"></td>
+    </tr>
+  </template>
+  <p><button class="btn btn-sm" type="button" id="agregar-item">+ Agregar contenedor</button></p>
+
+  <div class="actions">
+    <button class="btn btn-primary" type="submit">Guardar</button>
+    <a class="btn" href="{{ cancel_url }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}
+{% block extra_js %}
+<script>
+// Agrega una fila nueva al formset reemplazando __prefix__ por el siguiente índice
+document.getElementById("agregar-item").addEventListener("click", () => {
+  const total = document.getElementById("id_{{ formset.prefix }}-TOTAL_FORMS");
+  const html = document.getElementById("item-vacio").innerHTML.replace(/__prefix__/g, total.value);
+  document.getElementById("items").insertAdjacentHTML("beforeend", html);
+  total.value = Number(total.value) + 1;
+});
+</script>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ titulo }} · SpaceWise{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="{{ cancel_url }}">Volver</a> &rsaquo; {{ titulo }}</div>
+<div class="page-title"><div><h1>{{ titulo }}</h1></div></div>
+
+<form method="post" class="card form-card" {% if form.is_multipart %}enctype="multipart/form-data"{% endif %} novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="alert-form">{{ form.non_field_errors }}</div>{% endif %}
+  <div class="two-cols">
+    {% for field in form %}
+    {% if field.widget_type == "checkbox" %}
+    <div class="field full check-field">{{ field }} <label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field.errors }}</div>
+    {% else %}
+    <div class="field{% if field.widget_type == 'textarea' or field.widget_type == 'clearablefile' %} full{% endif %}">
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+      {{ field.errors }}
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+  <div class="actions">
+    <button class="btn btn-primary" type="submit">Guardar</button>
+    <a class="btn" href="{{ cancel_url }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

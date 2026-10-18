@@ -124,6 +124,7 @@ class BorrarMixin(PersonalRequeridoMixin, _CancelUrlMixin, SuccessMessageMixin):
         except ProtectedError:
             messages.error(
                 self.request,
-                "No se puede eliminar: tiene registros asociados (cotizaciones, compras o pedidos).",
+                "No se puede eliminar: tiene registros asociados (cotizaciones o pedidos). "
+                "Si es un contenedor, desmarca «Visible en el catálogo» para ocultarlo del catálogo.",
             )
             return redirect(self.get_cancel_url())

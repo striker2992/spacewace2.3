@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Clientes · SpaceWise{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div><h1>Clientes</h1><p>Clientes registrados en la tienda o cargados por el equipo.</p></div>
+  <a class="btn btn-primary" href="{% url 'clientes:crear' %}">+ Nuevo cliente</a>
+</div>
+<section class="card">
+  <div class="toolbar">
+    <form method="get">
+      <input type="search" name="q" value="{{ q }}" placeholder="Nombre, RUT o correo" aria-label="Buscar clientes">
+      <button class="btn" type="submit">Buscar</button>
+      {% if q %}<a class="btn" href="{% url 'clientes:lista' %}">Limpiar</a>{% endif %}
+    </form>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>CLIENTE</th><th>RUT</th><th>CONTACTO</th><th>CUENTA</th><th class="num">ACCIONES</th></tr></thead>
+      <tbody>
+      {% for c in clientes %}
+        <tr>
+          <td><a href="{{ c.get_absolute_url }}"><b>{{ c.nombre }}</b></a>{% if c.razon_social %}<br><small class="muted">{{ c.razon_social }}</small>{% endif %}</td>
+          <td>{{ c.rut|default:"—" }}</td>
+          <td>{{ c.email|default:"—" }}{% if c.telefono %}<br><small class="muted">{{ c.telefono }}</small>{% endif %}</td>
+          <td>{% if c.usuario_id %}<span class="badge info">Tienda</span>{% else %}<span class="badge">Manual</span>{% endif %}</td>
+          <td class="num"><a class="btn btn-sm" href="{{ c.get_absolute_url }}">Ver</a></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5" class="empty">No hay clientes que coincidan.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "_pagination.html" %}
+</section>
+{% endblock %}

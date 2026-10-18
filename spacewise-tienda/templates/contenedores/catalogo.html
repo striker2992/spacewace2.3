@@ -7,7 +7,7 @@
     <h1>Catálogo de contenedores</h1>
     <p>Elige el contenedor que necesitas, agrégalo al carrito y compra cuando estés listo.</p>
   </div>
-  {% if es_personal %}<a class="btn" href="{% url 'admin:contenedores_contenedor_changelist' %}">{% icon "settings" %} Administrar contenedores</a>{% endif %}
+  {% if es_personal %}<a class="btn" href="{% url 'contenedores:lista' %}">{% icon "settings" %} Administrar contenedores</a>{% endif %}
 </div>
 
 <section class="card">
@@ -72,7 +72,7 @@
       <div class="prod-price">${{ c.precio|floatformat:"0g" }} <small>por unidad</small></div>
       <div class="prod-foot">
         {% if es_personal %}
-        <button class="btn" type="button" disabled title="Las cuentas del equipo interno no pueden comprar">{% icon "lock" %} Compra no disponible</button>
+        <a class="btn btn-primary" href="{% url 'cotizaciones:crear' %}?contenedor={{ c.pk }}">{% icon "file-text" %} Cotizar</a>
         {% else %}
         <form method="post" action="{% url 'tienda:agregar' c.pk %}">
           {% csrf_token %}

@@ -1,10 +1,18 @@
 from django.contrib.auth import views as auth_views
-from django.shortcuts import render, resolve_url
+from django.shortcuts import redirect, render, resolve_url
 
 from apps.clientes.models import Cliente
+from apps.contenedores.views import CatalogoView
 from apps.core.mixins import es_personal, personal_requerido
 from apps.cotizaciones.models import Cotizacion, Pedido
 from apps.vendedores.models import Vendedor
+
+
+def inicio(request):
+    """Página de entrada: el equipo interno va directo a su panel; clientes y visitas ven el catálogo."""
+    if es_personal(request.user):
+        return redirect("dashboard")
+    return CatalogoView.as_view()(request)
 
 
 @personal_requerido

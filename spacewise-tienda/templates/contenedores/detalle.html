@@ -21,8 +21,9 @@
 
     <div class="buy-row">
       {% if es_personal %}
-      <button class="btn" type="button" disabled>{% icon "lock" %} Compra no disponible</button>
-      <p class="muted" style="margin:0">Las cuentas del equipo interno no pueden realizar compras.</p>
+      <a class="btn btn-primary" href="{% url 'cotizaciones:crear' %}?contenedor={{ contenedor.pk }}">{% icon "file-text" %} Cotizar</a>
+      <a class="btn" href="{% url 'contenedores:editar' contenedor.pk %}">Editar contenedor</a>
+      <p class="muted" style="margin:0">Las cuentas del equipo interno no compran en la tienda.</p>
       {% else %}
       <form method="post" action="{% url 'tienda:agregar' contenedor.pk %}">
         {% csrf_token %}

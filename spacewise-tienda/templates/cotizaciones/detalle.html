@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}{{ cotizacion.numero }} · SpaceWise{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="{% url 'cotizaciones:lista' %}">Cotizaciones</a> &rsaquo; {{ cotizacion.numero }}</div>
+<div class="page-title">
+  <div>
+    <h1>{{ cotizacion.numero }} <span class="badge {{ cotizacion.badge }}" style="vertical-align:middle">{{ cotizacion.get_estado_display }}</span></h1>
+    <p>{{ cotizacion.fecha|date:"d/m/Y" }} · <a href="{{ cotizacion.cliente.get_absolute_url }}">{{ cotizacion.cliente.nombre }}</a>{% if cotizacion.vendedor %} · {{ cotizacion.vendedor.user.get_full_name|default:cotizacion.vendedor.user.username }}{% endif %}</p>
+  </div>
+  <div class="actions">
+    {% if cotizacion.estado != "aprobada" %}
+    <form class="inline" method="post" action="{% url 'cotizaciones:estado' cotizacion.pk %}">{% csrf_token %}<input type="hidden" name="estado" value="aprobada"><button class="btn btn-primary" type="submit">{% icon "check" %} Aprobar</button></form>
+    {% endif %}
+    {% if cotizacion.estado != "rechazada" %}
+    <form class="inline" method="post" action="{% url 'cotizaciones:estado' cotizacion.pk %}">{% csrf_token %}<input type="hidden" name="estado" value="rechazada"><button class="btn btn-danger" type="submit">{% icon "x" %} Rechazar</button></form>
+    {% endif %}
+    <a class="btn" href="{% url 'cotizaciones:editar' cotizacion.pk %}">Editar</a>
+    <a class="btn btn-danger" href="{% url 'cotizaciones:eliminar' cotizacion.pk %}" aria-label="Eliminar">{% icon "trash" %}</a>
+  </div>
+</div>
+
+<section class="card">
+  <h2>Contenedores</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>CONTENEDOR</th><th class="num">CANTIDAD</th><th class="num">PRECIO UNIT.</th><th class="num">SUBTOTAL</th></tr></thead>
+      <tbody>
+      {% for i in cotizacion.items.all %}
+        <tr>
+          <td>{{ i.contenedor.nombre }} <small class="muted">· {{ i.contenedor.get_tipo_display }}</small></td>
+          <td class="num">{{ i.cantidad }}</td>
+          <td class="num">${{ i.precio_unitario|floatformat:"0g" }}</td>
+          <td class="num">${{ i.subtotal|floatformat:"0g" }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="total-row"><span class="muted">Total</span> <strong>${{ cotizacion.total|floatformat:"0g" }}</strong></div>
+</section>
+
+{% if cotizacion.notas %}<section class="card"><h2>Notas</h2><p style="margin:0">{{ cotizacion.notas|linebreaksbr }}</p></section>{% endif %}
+{% endblock %}

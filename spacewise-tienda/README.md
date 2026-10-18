@@ -28,7 +28,7 @@ El archivo `.env` está en `.gitignore`: **nunca subas contraseñas al repositor
 
 ### Usar MySQL en vez de SQLite
 
-1. Crea la base: `CREATE DATABASE spacewise CHARACTER SET utf8mb4;`
+1. Crea la base: `CREATE DATABASE spacewise_db CHARACTER SET utf8mb4;`
 2. `pip install -r requirements/mysql.txt`
 3. En `.env`: `DB_ENGINE=mysql`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`
 4. `python manage.py migrate`

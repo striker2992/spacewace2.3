@@ -46,11 +46,11 @@
     </div>
     <div class="field">
       <label for="f-pmin">Precio desde</label>
-      <input id="f-pmin" type="number" name="precio_min" value="{{ precio_min }}" min="0" step="1" placeholder="$ mínimo">
+      <input id="f-pmin" type="number" name="precio_min" value="{{ precio_min }}" min="0" step="1" data-filtro="entero" placeholder="$ mínimo">
     </div>
     <div class="field">
       <label for="f-pmax">Precio hasta</label>
-      <input id="f-pmax" type="number" name="precio_max" value="{{ precio_max }}" min="0" step="1" placeholder="$ máximo">
+      <input id="f-pmax" type="number" name="precio_max" value="{{ precio_max }}" min="0" step="1" data-filtro="entero" placeholder="$ máximo">
     </div>
     <label class="check"><input type="checkbox" name="disponibles" value="1" {% if solo_disponibles %}checked{% endif %}> Solo disponibles</label>
     <div class="actions">

@@ -30,7 +30,7 @@
             <td>
               <form class="qty-form" method="post" action="{% url 'tienda:actualizar' i.pk %}">
                 {% csrf_token %}
-                <input type="number" name="cantidad" value="{{ i.cantidad }}" min="0" max="{{ i.contenedor.stock }}" aria-label="Cantidad de {{ i.contenedor.nombre }}">
+                <input type="number" name="cantidad" data-filtro="entero" step="1" value="{{ i.cantidad }}" min="0" max="{{ i.contenedor.stock }}" aria-label="Cantidad de {{ i.contenedor.nombre }}">
                 <button class="btn btn-sm" type="submit">Actualizar</button>
               </form>
             </td>

@@ -4,6 +4,8 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.password_validation import validate_password
 from django.db import transaction
 
+from apps.core.validators import ValidacionMixin, validar_nombre_persona, validar_rut, validar_telefono, validar_texto
+
 from .models import Cliente
 
 User = get_user_model()
@@ -20,9 +22,15 @@ def correo_disponible(email, excepto=None):
     return email
 
 
-class ClienteForm(forms.ModelForm):
+class ClienteForm(ValidacionMixin, forms.ModelForm):
     """Ficha del cliente para el equipo interno. Opcionalmente crea su acceso a la tienda
     (usuario = correo) o le asigna una contraseña nueva."""
+
+    validaciones = {
+        "nombre": validar_texto, "rut": validar_rut, "razon_social": validar_texto,
+        "telefono": validar_telefono, "direccion": validar_texto,
+    }
+    filtros = {"rut": "rut", "telefono": "telefono"}
 
     password1 = forms.CharField(
         label="Contraseña", required=False, strip=False,
@@ -100,8 +108,14 @@ class ClienteForm(forms.ModelForm):
         return cliente
 
 
-class RegistroForm(UserCreationForm):
+class RegistroForm(ValidacionMixin, UserCreationForm):
     """Crea el User y su perfil Cliente (RUT, teléfono, empresa, dirección) en un solo paso."""
+
+    validaciones = {
+        "first_name": validar_nombre_persona, "last_name": validar_nombre_persona, "rut": validar_rut,
+        "telefono": validar_telefono, "razon_social": validar_texto, "direccion": validar_texto,
+    }
+    filtros = {"first_name": "letras", "last_name": "letras", "rut": "rut", "telefono": "telefono"}
 
     first_name = forms.CharField(label="Nombre", max_length=150)
     last_name = forms.CharField(label="Apellido", max_length=150)

@@ -28,7 +28,7 @@
       <form method="post" action="{% url 'tienda:agregar' contenedor.pk %}">
         {% csrf_token %}
         <input type="hidden" name="next" value="{{ request.get_full_path }}">
-        <input class="qty" type="number" name="cantidad" value="1" min="1" max="{{ contenedor.stock }}" aria-label="Cantidad" {% if not contenedor.disponible %}disabled{% endif %}>
+        <input class="qty" type="number" name="cantidad" data-filtro="entero" step="1" value="1" min="1" max="{{ contenedor.stock }}" aria-label="Cantidad" {% if not contenedor.disponible %}disabled{% endif %}>
         <button class="btn btn-primary" type="submit" {% if not contenedor.disponible %}disabled{% endif %}>{% icon "cart" %} Agregar al carrito</button>
       </form>
       <a class="btn" href="{% url 'tienda:solicitar_cotizacion' %}?contenedor={{ contenedor.pk }}">{% icon "file-text" %} Solicitar cotización</a>

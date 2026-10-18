@@ -67,7 +67,7 @@ class ClienteConCuentaTests(TestCase):
         self.client.force_login(self.staff)
 
     def datos(self, **extra):
-        d = {"nombre": "Ferretería Sur", "rut": "76.111.222-3", "razon_social": "", "email": "compras@sur.cl",
+        d = {"nombre": "Ferretería Sur", "rut": "76.111.222-8", "razon_social": "", "email": "compras@sur.cl",
              "telefono": "", "direccion": "", "informacion_general": "", "password1": "", "password2": ""}
         d.update(extra)
         return d

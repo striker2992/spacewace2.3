@@ -6,9 +6,14 @@ from django.utils import timezone
 
 class Cotizacion(models.Model):
     class Estado(models.TextChoices):
-        PENDIENTE = "pendiente", "Pendiente"
+        SOLICITADA = "solicitada", "Solicitada"  # pedida por el cliente, falta valorizarla
+        PENDIENTE = "pendiente", "Pendiente"  # valorizada, esperando aprobación
         APROBADA = "aprobada", "Aprobada"
         RECHAZADA = "rechazada", "Rechazada"
+
+    class Origen(models.TextChoices):
+        EQUIPO = "equipo", "Equipo de ventas"
+        WEB = "web", "Cliente (web)"
 
     cliente = models.ForeignKey(
         "clientes.Cliente", on_delete=models.PROTECT, related_name="cotizaciones"
@@ -23,6 +28,9 @@ class Cotizacion(models.Model):
     estado = models.CharField(max_length=10, choices=Estado.choices, default=Estado.PENDIENTE)
     fecha = models.DateField(default=timezone.localdate)
     notas = models.TextField(blank=True)
+    origen = models.CharField(max_length=10, choices=Origen.choices, default=Origen.EQUIPO)
+    fecha_requerida = models.DateField("¿Para cuándo lo necesitas?", null=True, blank=True)
+    direccion_entrega = models.CharField("Dirección de entrega", max_length=255, blank=True)
     creado = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -46,7 +54,16 @@ class Cotizacion(models.Model):
 
     @property
     def badge(self):
-        return {"aprobada": "ok", "pendiente": "warn", "rechazada": "bad"}.get(self.estado, "")
+        return {"aprobada": "ok", "pendiente": "warn", "rechazada": "bad", "solicitada": "info"}.get(self.estado, "")
+
+    @property
+    def flujo(self):
+        """Pasos para el cliente: solicitada -> valorizada -> aprobada/rechazada."""
+        orden = [self.Estado.SOLICITADA, self.Estado.PENDIENTE]
+        final = self.Estado.RECHAZADA if self.estado == self.Estado.RECHAZADA else self.Estado.APROBADA
+        pasos = [(e.value, "Valorizada" if e == self.Estado.PENDIENTE else e.label) for e in orden + [final]]
+        actual = [v for v, _ in pasos].index(self.estado)
+        return [(v, etiqueta, "done" if i < actual else "current" if i == actual else "") for i, (v, etiqueta) in enumerate(pasos)]
 
     def get_absolute_url(self):
         return reverse("cotizaciones:detalle", args=[self.pk])

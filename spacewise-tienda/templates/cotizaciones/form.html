@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load ui %}
+{% load static ui %}
 {% block title %}{{ titulo }} · SpaceWise{% endblock %}
 {% block content %}
 <div class="crumbs"><a href="{{ cancel_url }}">Volver</a> &rsaquo; {{ titulo }}</div>
@@ -82,17 +82,4 @@
   </div>
 </form>
 {% endblock %}
-{% block extra_js %}
-<script>
-// Agrega una fila nueva al formset indicado, reemplazando __prefix__ por el siguiente índice
-document.querySelectorAll("[data-agregar]").forEach((boton) => {
-  boton.addEventListener("click", () => {
-    const prefijo = boton.dataset.agregar;
-    const total = document.getElementById(`id_${prefijo}-TOTAL_FORMS`);
-    const html = document.getElementById(`${prefijo}-vacio`).innerHTML.replace(/__prefix__/g, total.value);
-    document.getElementById(`${prefijo}-filas`).insertAdjacentHTML("beforeend", html);
-    total.value = Number(total.value) + 1;
-  });
-});
-</script>
-{% endblock %}
+{% block extra_js %}<script src="{% static 'js/formset.js' %}"></script>{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base_publico.html" %}
+{% block title %}Mis cotizaciones · SpaceWise{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div><h1>Mis cotizaciones</h1><p>Historial de tus solicitudes y su estado de aprobación.</p></div>
+  <a class="btn btn-primary" href="{% url 'tienda:solicitar_cotizacion' %}">+ Solicitar cotización</a>
+</div>
+<section class="card">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>N.º</th><th>FECHA</th><th class="num">TOTAL</th><th>ESTADO</th><th></th></tr></thead>
+      <tbody>
+      {% for c in cotizaciones %}
+        <tr>
+          <td><a href="{% url 'tienda:detalle_cotizacion' c.pk %}"><b>{{ c.numero }}</b></a></td>
+          <td>{{ c.fecha|date:"d/m/Y" }}</td>
+          <td class="num">{% if c.estado == "solicitada" %}<span class="muted">Por valorizar</span>{% else %}${{ c.total|floatformat:"0g" }}{% endif %}</td>
+          <td><span class="badge {{ c.badge }}">{{ c.get_estado_display }}</span></td>
+          <td class="num"><div class="actions">{% if c.estado == "aprobada" %}<a class="btn btn-sm" href="{% url 'tienda:pdf_cotizacion' c.pk %}">PDF</a>{% endif %}<a class="btn btn-sm" href="{% url 'tienda:detalle_cotizacion' c.pk %}">Ver detalle</a></div></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5" class="empty">Aún no tienes cotizaciones. <a href="{% url 'tienda:solicitar_cotizacion' %}">Solicita la primera</a>.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "_pagination.html" %}
+</section>
+{% endblock %}

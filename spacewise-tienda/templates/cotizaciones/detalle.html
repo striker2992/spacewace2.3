@@ -9,16 +9,31 @@
     <p>{{ cotizacion.fecha|date:"d/m/Y" }} · <a href="{{ cotizacion.cliente.get_absolute_url }}">{{ cotizacion.cliente.nombre }}</a>{% if cotizacion.vendedor %} · {{ cotizacion.vendedor.user.get_full_name|default:cotizacion.vendedor.user.username }}{% endif %}</p>
   </div>
   <div class="actions">
-    {% if cotizacion.estado != "aprobada" %}
+    {% if cotizacion.estado == "solicitada" %}
+    <a class="btn" href="{% url 'cotizaciones:editar' cotizacion.pk %}">Ajustar precios</a>
+    <form class="inline" method="post" action="{% url 'cotizaciones:estado' cotizacion.pk %}">{% csrf_token %}<input type="hidden" name="estado" value="pendiente"><button class="btn btn-primary" type="submit">{% icon "check" %} Enviar valorización</button></form>
+    {% endif %}
+    {% if cotizacion.estado == "pendiente" or cotizacion.estado == "rechazada" %}
     <form class="inline" method="post" action="{% url 'cotizaciones:estado' cotizacion.pk %}">{% csrf_token %}<input type="hidden" name="estado" value="aprobada"><button class="btn btn-primary" type="submit">{% icon "check" %} Aprobar</button></form>
     {% endif %}
     {% if cotizacion.estado != "rechazada" %}
     <form class="inline" method="post" action="{% url 'cotizaciones:estado' cotizacion.pk %}">{% csrf_token %}<input type="hidden" name="estado" value="rechazada"><button class="btn btn-danger" type="submit">{% icon "x" %} Rechazar</button></form>
     {% endif %}
-    <a class="btn" href="{% url 'cotizaciones:editar' cotizacion.pk %}">Editar</a>
+    {% if cotizacion.estado != "solicitada" %}<a class="btn" href="{% url 'cotizaciones:editar' cotizacion.pk %}">Editar</a>{% endif %}
+    <a class="btn" href="{% url 'cotizaciones:pdf' cotizacion.pk %}">{% icon "file-text" %} Descargar PDF</a>
     <a class="btn btn-danger" href="{% url 'cotizaciones:eliminar' cotizacion.pk %}" aria-label="Eliminar">{% icon "trash" %}</a>
   </div>
 </div>
+
+{% if cotizacion.origen == "web" %}
+<section class="card" style="background:var(--info-bg);border-color:transparent">
+  <h2>Solicitud del cliente (web)</h2>
+  {% if cotizacion.estado == "solicitada" %}<p style="margin:0 0 8px">Los precios son los del catálogo. Ajústalos si corresponde y luego envía la valorización.</p>{% endif %}
+  {% if cotizacion.fecha_requerida %}<p style="margin:0 0 6px"><b>Lo necesita para:</b> {{ cotizacion.fecha_requerida|date:"d/m/Y" }}</p>{% endif %}
+  {% if cotizacion.direccion_entrega %}<p style="margin:0 0 6px"><b>Entrega en:</b> {{ cotizacion.direccion_entrega }}</p>{% endif %}
+  {% if cotizacion.notas %}<p style="margin:0"><b>Comentarios:</b> {{ cotizacion.notas|linebreaksbr }}</p>{% endif %}
+</section>
+{% endif %}
 
 <section class="card">
   <h2>Contenedores</h2>
@@ -62,5 +77,5 @@
 </section>
 {% endif %}
 
-{% if cotizacion.notas %}<section class="card"><h2>Notas</h2><p style="margin:0">{{ cotizacion.notas|linebreaksbr }}</p></section>{% endif %}
+{% if cotizacion.notas and cotizacion.origen != "web" %}<section class="card"><h2>Notas</h2><p style="margin:0">{{ cotizacion.notas|linebreaksbr }}</p></section>{% endif %}
 {% endblock %}

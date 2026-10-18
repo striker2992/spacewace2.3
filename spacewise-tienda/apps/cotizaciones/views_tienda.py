@@ -10,6 +10,7 @@ from django.views.generic import DetailView, FormView, ListView, TemplateView
 
 from apps.clientes.models import Cliente
 from apps.contenedores.models import Contenedor
+from apps.core.mixins import SoloClientesMixin, solo_clientes
 
 from .carrito import CANTIDAD_MAXIMA, CarritoError, actualizar_item, agregar_item, obtener_carrito
 from .forms import CheckoutForm
@@ -37,7 +38,7 @@ def _volver(request, defecto="tienda:carrito"):
 # ---------------------------------------------------------------------------
 # B. Carrito (funciona sin iniciar sesión)
 # ---------------------------------------------------------------------------
-class CarritoView(TemplateView):
+class CarritoView(SoloClientesMixin, TemplateView):
     template_name = "cliente/carrito.html"
 
     def get_context_data(self, **kwargs):
@@ -50,6 +51,7 @@ class CarritoView(TemplateView):
         return ctx
 
 
+@solo_clientes
 @require_POST
 def agregar_al_carrito(request, pk):
     contenedor = get_object_or_404(Contenedor, pk=pk, activo=True)
@@ -70,6 +72,7 @@ def _item_del_request(request, pk):
     return get_object_or_404(ItemCarrito.objects.select_related("contenedor"), pk=pk, carrito=carrito)
 
 
+@solo_clientes
 @require_POST
 def actualizar_cantidad(request, pk):
     item = _item_del_request(request, pk)
@@ -80,6 +83,7 @@ def actualizar_cantidad(request, pk):
     return redirect("tienda:carrito")
 
 
+@solo_clientes
 @require_POST
 def eliminar_item(request, pk):
     item = _item_del_request(request, pk)
@@ -92,7 +96,7 @@ def eliminar_item(request, pk):
 # ---------------------------------------------------------------------------
 # C. Checkout: login obligatorio
 # ---------------------------------------------------------------------------
-class CheckoutView(LoginRequiredMixin, FormView):
+class CheckoutView(SoloClientesMixin, LoginRequiredMixin, FormView):
     """Sin sesión -> /accounts/login/?next=/carrito/checkout/ y, tras entrar, vuelve aquí."""
 
     template_name = "cliente/checkout.html"

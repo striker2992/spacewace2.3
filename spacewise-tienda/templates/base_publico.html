@@ -18,13 +18,15 @@
       {% if user.is_authenticated and not es_personal %}
       <a href="{% url 'tienda:mis_pedidos' %}" class="{% if url == 'mis_pedidos' or url == 'detalle_pedido' %}active{% endif %}">Mis pedidos</a>
       {% endif %}
-      {% if es_personal %}<a href="{% url 'admin:index' %}">Administración</a>{% endif %}
+      {% if es_personal %}<a href="{% url 'dashboard' %}">Panel</a>{% endif %}
     </nav>
     <div class="pub-actions">
+      {% if not es_personal %}
       <a class="cart-link" href="{% url 'tienda:carrito' %}" aria-label="Carrito, {{ carrito_cantidad }} producto(s)">
         {% icon "cart" %} Carrito
         {% if carrito_cantidad %}<span class="cart-count">{{ carrito_cantidad }}</span>{% endif %}
       </a>
+      {% endif %}
       {% if user.is_authenticated %}
         <strong>{{ user.get_full_name|default:user.username }}</strong>
         <form method="post" action="{% url 'logout' %}">

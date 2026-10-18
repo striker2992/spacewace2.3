@@ -39,3 +39,16 @@ def icon(name, css_class=""):
         f" {css_class}" if css_class else "",
         mark_safe(cuerpo),
     )
+
+
+@register.filter
+def compact(valor):
+    """15500 -> "$15.5k", 1200000 -> "$1.2M" (para tarjetas con poco espacio)."""
+    try:
+        n = float(valor)
+    except (TypeError, ValueError):
+        return valor
+    for limite, sufijo in ((1_000_000_000, "B"), (1_000_000, "M"), (1_000, "k")):
+        if abs(n) >= limite:
+            return f"${n / limite:.1f}".rstrip("0").rstrip(".") + sufijo
+    return f"${n:.0f}"

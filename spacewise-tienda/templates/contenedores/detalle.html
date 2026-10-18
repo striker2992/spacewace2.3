@@ -20,12 +20,17 @@
     {% if contenedor.descripcion %}<p style="margin:0;line-height:1.55;color:#374151">{{ contenedor.descripcion|linebreaksbr }}</p>{% endif %}
 
     <div class="buy-row">
+      {% if es_personal %}
+      <button class="btn" type="button" disabled>{% icon "lock" %} Compra no disponible</button>
+      <p class="muted" style="margin:0">Las cuentas del equipo interno no pueden realizar compras.</p>
+      {% else %}
       <form method="post" action="{% url 'tienda:agregar' contenedor.pk %}">
         {% csrf_token %}
         <input type="hidden" name="next" value="{{ request.get_full_path }}">
         <input class="qty" type="number" name="cantidad" value="1" min="1" max="{{ contenedor.stock }}" aria-label="Cantidad" {% if not contenedor.disponible %}disabled{% endif %}>
         <button class="btn btn-primary" type="submit" {% if not contenedor.disponible %}disabled{% endif %}>{% icon "cart" %} Agregar al carrito</button>
       </form>
+      {% endif %}
     </div>
 
     <section class="card">

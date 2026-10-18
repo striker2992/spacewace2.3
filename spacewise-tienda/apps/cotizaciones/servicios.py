@@ -42,9 +42,10 @@ def crear_pedido(carrito, cliente, datos):
         problemas = []
         for item in items:
             c = bloqueados[item.contenedor_id]
-            if not c.activo or c.stock < item.cantidad:
+            vendible = c.activo and c.estado == Contenedor.Estado.DISPONIBLE
+            if not vendible or c.stock < item.cantidad:
                 problemas.append(
-                    f"«{c.nombre}»: pediste {item.cantidad} y hay {c.stock if c.activo else 0} disponible(s)."
+                    f"«{c.nombre}»: pediste {item.cantidad} y hay {c.stock if vendible else 0} disponible(s)."
                 )
         if problemas:
             raise PedidoError("Cambió la disponibilidad de algunos contenedores. " + " ".join(problemas))

@@ -7,6 +7,11 @@
   <a class="btn btn-primary" href="{% url 'contenedores:crear' %}">+ Nuevo contenedor</a>
 </div>
 <section class="card">
+  <div class="stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:18px">
+    {% for r in resumen_estados %}
+    <a class="stat" href="?estado={{ r.valor }}" style="color:inherit;text-decoration:none{% if r.valor == estado %};border-color:var(--primary){% endif %}"><small>{{ r.etiqueta }}</small><strong>{{ r.n }}</strong></a>
+    {% endfor %}
+  </div>
   <div class="toolbar">
     <form method="get">
       <input type="search" name="q" value="{{ q }}" placeholder="Nombre o ubicación" aria-label="Buscar">
@@ -14,19 +19,24 @@
         <option value="">Todos los tipos</option>
         {% for value, label in tipos %}<option value="{{ value }}" {% if value == tipo %}selected{% endif %}>{{ label }}</option>{% endfor %}
       </select>
+      <select name="estado" onchange="this.form.submit()" aria-label="Filtrar por disponibilidad">
+        <option value="">Toda disponibilidad</option>
+        {% for value, label in estados %}<option value="{{ value }}" {% if value == estado %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
       <button class="btn" type="submit">Filtrar</button>
-      {% if q or tipo %}<a class="btn" href="{% url 'contenedores:lista' %}">Limpiar</a>{% endif %}
+      {% if q or tipo or estado %}<a class="btn" href="{% url 'contenedores:lista' %}">Limpiar</a>{% endif %}
     </form>
   </div>
   <div class="table-wrap">
     <table>
-      <thead><tr><th></th><th>CONTENEDOR</th><th>ESTADO</th><th class="num">PRECIO</th><th class="num">STOCK</th><th>CATÁLOGO</th><th class="num">ACCIONES</th></tr></thead>
+      <thead><tr><th></th><th>CONTENEDOR</th><th>CONDICIÓN</th><th>DISPONIBILIDAD</th><th class="num">PRECIO</th><th class="num">STOCK</th><th>CATÁLOGO</th><th class="num">ACCIONES</th></tr></thead>
       <tbody>
       {% for c in contenedores %}
         <tr>
           <td><span class="thumb tipo-{{ c.tipo }}">{% if c.imagen %}<img src="{{ c.imagen.url }}" alt="">{% endif %}</span></td>
           <td><b>{{ c.nombre }}</b><br><small class="muted">{{ c.get_tipo_display }}{% if c.ubicacion %} · {{ c.ubicacion }}{% endif %}</small></td>
           <td>{{ c.get_condicion_display }}</td>
+          <td><span class="badge {{ c.badge_estado }}">{{ c.get_estado_display }}</span></td>
           <td class="num">${{ c.precio|floatformat:"0g" }}</td>
           <td class="num">{% if c.stock %}{{ c.stock }}{% else %}<span class="badge bad">0</span>{% endif %}</td>
           <td>{% if c.activo %}<span class="badge ok">Visible</span>{% else %}<span class="badge">Oculto</span>{% endif %}</td>
@@ -36,7 +46,7 @@
           </div></td>
         </tr>
       {% empty %}
-        <tr><td colspan="7" class="empty">No hay contenedores. <a href="{% url 'contenedores:crear' %}">Agrega el primero</a>.</td></tr>
+        <tr><td colspan="8" class="empty">No hay contenedores. <a href="{% url 'contenedores:crear' %}">Agrega el primero</a>.</td></tr>
       {% endfor %}
       </tbody>
     </table>

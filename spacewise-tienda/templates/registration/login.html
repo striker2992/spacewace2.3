@@ -18,15 +18,15 @@
     <form class="login-box" method="post" novalidate>
       {% csrf_token %}
       <h2>Iniciar sesión</h2>
-      <p class="muted" style="margin:0 0 24px;font-size:12px">Ingresa tus credenciales para acceder a tu panel.</p>
+      <p class="muted" style="margin:0 0 24px;font-size:12px">Ingresa con tu correo y contraseña. El equipo interno también puede usar su nombre de usuario.</p>
 
       {% if form.non_field_errors %}<div class="alert-form">{{ form.non_field_errors.0 }}</div>{% endif %}
 
       <div class="field">
-        <label for="{{ form.username.id_for_label }}">Nombre de usuario</label>
+        <label for="{{ form.username.id_for_label }}">Correo electrónico</label>
         <div class="input-icon">
           {% icon "user" %}
-          <input type="text" name="username" id="{{ form.username.id_for_label }}" placeholder="Tu usuario" autocomplete="username" autofocus required value="{{ form.username.value|default:'' }}">
+          <input type="text" name="username" id="{{ form.username.id_for_label }}" placeholder="tu@correo.cl" autocomplete="username" autofocus required value="{{ form.username.value|default:'' }}">
         </div>
       </div>
       <div class="field">

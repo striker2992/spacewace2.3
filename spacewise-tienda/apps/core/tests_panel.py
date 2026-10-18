@@ -87,7 +87,7 @@ class ContenedoresCrudTests(TestCase):
         cls.comprador = User.objects.create_user("comprador", password="clave-de-prueba-123")
 
     def datos(self, **extra):
-        d = {"nombre": "Contenedor nuevo", "tipo": "40HC", "condicion": "nuevo", "precio": "5000",
+        d = {"nombre": "Contenedor nuevo", "tipo": "40HC", "condicion": "nuevo", "estado": "disponible", "precio": "5000",
              "stock": "3", "ubicacion": "Coronel", "descripcion": "", "especificaciones": "", "activo": "on"}
         d.update(extra)
         return d

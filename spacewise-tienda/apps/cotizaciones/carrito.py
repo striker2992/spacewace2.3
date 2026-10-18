@@ -40,6 +40,8 @@ def agregar_item(carrito, contenedor, cantidad=1):
     """Suma `cantidad` al ítem (lo crea si no existe) sin superar el stock."""
     if not contenedor.activo:
         raise CarritoError("Este contenedor ya no está disponible.")
+    if contenedor.estado != contenedor.Estado.DISPONIBLE:
+        raise CarritoError(f"Este contenedor está {contenedor.get_estado_display().lower()}; no se puede comprar.")
     if contenedor.stock <= 0:
         raise CarritoError("Este contenedor está sin stock.")
     aviso = None

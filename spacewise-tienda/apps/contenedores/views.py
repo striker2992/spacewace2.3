@@ -23,17 +23,27 @@ class ContenedorLista(PersonalRequeridoMixin, QueryStringMixin, ListView):
         qs = Contenedor.objects.all()
         q = self.request.GET.get("q", "").strip()
         tipo = self.request.GET.get("tipo", "")
+        estado = self.request.GET.get("estado", "")
         if q:
             qs = qs.filter(Q(nombre__icontains=q) | Q(ubicacion__icontains=q))
         if tipo in Contenedor.Tipo.values:
             qs = qs.filter(tipo=tipo)
+        if estado in Contenedor.Estado.values:
+            qs = qs.filter(estado=estado)
         return qs
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["q"] = self.request.GET.get("q", "")
         ctx["tipo"] = self.request.GET.get("tipo", "")
+        ctx["estado"] = self.request.GET.get("estado", "")
         ctx["tipos"] = Contenedor.Tipo.choices
+        ctx["estados"] = Contenedor.Estado.choices
+        # Reporte de disponibilidad: unidades por estado (sobre todo el inventario)
+        ctx["resumen_estados"] = [
+            {"valor": v, "etiqueta": e, "n": Contenedor.objects.filter(estado=v).count()}
+            for v, e in Contenedor.Estado.choices
+        ]
         return ctx
 
 
@@ -90,6 +100,7 @@ class CatalogoView(QueryStringMixin, ListView):
         tipo = g.get("tipo", "")
         tamano = g.get("tamano", "")
         condicion = g.get("condicion", "")
+        estado = g.get("estado", "")
         precio_min = _decimal(g.get("precio_min", ""))
         precio_max = _decimal(g.get("precio_max", ""))
 
@@ -101,12 +112,14 @@ class CatalogoView(QueryStringMixin, ListView):
             qs = qs.filter(tipo__startswith=tamano)  # códigos: 20DC, 40DC, 40HC, 40RF, 20OT
         if condicion in Contenedor.Condicion.values:
             qs = qs.filter(condicion=condicion)
+        if estado in Contenedor.Estado.values:
+            qs = qs.filter(estado=estado)
         if precio_min is not None:
             qs = qs.filter(precio__gte=precio_min)
         if precio_max is not None:
             qs = qs.filter(precio__lte=precio_max)
         if g.get("disponibles") == "1":
-            qs = qs.filter(stock__gt=0)
+            qs = qs.filter(stock__gt=0, estado=Contenedor.Estado.DISPONIBLE)
         return qs.order_by("precio", "nombre")
 
     def get_context_data(self, **kwargs):
@@ -117,15 +130,17 @@ class CatalogoView(QueryStringMixin, ListView):
             tipo=g.get("tipo", ""),
             tamano=g.get("tamano", ""),
             condicion=g.get("condicion", ""),
+            estado=g.get("estado", ""),
             precio_min=g.get("precio_min", ""),
             precio_max=g.get("precio_max", ""),
             solo_disponibles=g.get("disponibles") == "1",
             tipos=Contenedor.Tipo.choices,
             tamanos=self.TAMANOS,
             condiciones=Contenedor.Condicion.choices,
+            estados=Contenedor.Estado.choices,
         )
         ctx["hay_filtros"] = any(
-            [ctx["q"], ctx["tipo"], ctx["tamano"], ctx["condicion"],
+            [ctx["q"], ctx["tipo"], ctx["tamano"], ctx["condicion"], ctx["estado"],
              ctx["precio_min"], ctx["precio_max"], ctx["solo_disponibles"]]
         )
         return ctx

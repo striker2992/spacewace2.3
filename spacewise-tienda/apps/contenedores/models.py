@@ -14,9 +14,15 @@ class Contenedor(models.Model):
         NUEVO = "nuevo", "Nuevo"
         USADO = "usado", "Usado"
 
+    class Estado(models.TextChoices):
+        DISPONIBLE = "disponible", "Disponible"
+        ARRENDADO = "arrendado", "Arrendado"
+        MANTENIMIENTO = "mantenimiento", "En mantenimiento"
+
     nombre = models.CharField(max_length=120)
     tipo = models.CharField(max_length=4, choices=Tipo.choices)
-    condicion = models.CharField(max_length=10, choices=Condicion.choices, default=Condicion.NUEVO)
+    condicion = models.CharField("Condición", max_length=10, choices=Condicion.choices, default=Condicion.NUEVO)
+    estado = models.CharField(max_length=15, choices=Estado.choices, default=Estado.DISPONIBLE)
     precio = models.DecimalField("Precio unitario", max_digits=12, decimal_places=2)
     stock = models.PositiveIntegerField(default=0)
     ubicacion = models.CharField("Ubicación", max_length=120, blank=True)
@@ -42,7 +48,12 @@ class Contenedor(models.Model):
 
     @property
     def disponible(self):
-        return self.activo and self.stock > 0
+        """Se puede vender: visible, con stock y no arrendado ni en mantenimiento."""
+        return self.activo and self.stock > 0 and self.estado == self.Estado.DISPONIBLE
+
+    @property
+    def badge_estado(self):
+        return {"disponible": "ok", "arrendado": "info", "mantenimiento": "warn"}.get(self.estado, "")
 
     @property
     def lista_especificaciones(self):

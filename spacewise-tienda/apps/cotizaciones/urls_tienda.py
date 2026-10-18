@@ -16,4 +16,5 @@ urlpatterns = [
     path("cotizaciones/", v.MisCotizacionesView.as_view(), name="mis_cotizaciones"),
     path("cotizaciones/solicitar/", v.solicitar_cotizacion, name="solicitar_cotizacion"),
     path("cotizaciones/<int:pk>/", v.MiCotizacionDetalleView.as_view(), name="detalle_cotizacion"),
+    path("cotizaciones/<int:pk>/pdf/", v.mi_cotizacion_pdf, name="pdf_cotizacion"),
 ]

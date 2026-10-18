@@ -16,7 +16,7 @@
           <td>{{ c.fecha|date:"d/m/Y" }}</td>
           <td class="num">{% if c.estado == "solicitada" %}<span class="muted">Por valorizar</span>{% else %}${{ c.total|floatformat:"0g" }}{% endif %}</td>
           <td><span class="badge {{ c.badge }}">{{ c.get_estado_display }}</span></td>
-          <td class="num"><a class="btn btn-sm" href="{% url 'tienda:detalle_cotizacion' c.pk %}">Ver detalle</a></td>
+          <td class="num"><div class="actions">{% if c.estado == "aprobada" %}<a class="btn btn-sm" href="{% url 'tienda:pdf_cotizacion' c.pk %}">PDF</a>{% endif %}<a class="btn btn-sm" href="{% url 'tienda:detalle_cotizacion' c.pk %}">Ver detalle</a></div></td>
         </tr>
       {% empty %}
         <tr><td colspan="5" class="empty">Aún no tienes cotizaciones. <a href="{% url 'tienda:solicitar_cotizacion' %}">Solicita la primera</a>.</td></tr>

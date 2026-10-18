@@ -104,3 +104,56 @@ class SolicitudCotizacionTests(TestCase):
         self.client.post(reverse("cotizaciones:estado", args=[cot.pk]), {"estado": "aprobada"})
         self.client.force_login(self.user)
         self.assertContains(self.client.get(reverse("tienda:mis_cotizaciones")), "Aprobada")
+
+
+class PdfCotizacionTests(TestCase):
+    """RQ02: el equipo descarga el PDF de cualquier cotización. RQ11: el cliente, solo si está aprobada."""
+
+    @classmethod
+    def setUpTestData(cls):
+        from .models import CotizacionItem, CotizacionServicio
+
+        User = get_user_model()
+        cls.user = User.objects.create_user("ana@ejemplo.cl", email="ana@ejemplo.cl", password=CLAVE)
+        cls.otro = User.objects.create_user("beto@ejemplo.cl", email="beto@ejemplo.cl", password=CLAVE)
+        cls.staff = User.objects.create_user("jefe", password=CLAVE, is_staff=True)
+        cliente = Cliente.objects.create(usuario=cls.user, nombre="Ana Soto", rut="12.345.678-5")
+        contenedor = Contenedor.objects.create(nombre="Dry 20", tipo="20DC", precio=4000, stock=5)
+        servicio = Servicio.objects.create(nombre="Transporte", precio=1200, unidad="km")
+        cls.cot = Cotizacion.objects.create(cliente=cliente, estado="pendiente", notas="Entrega en obra")
+        CotizacionItem.objects.create(cotizacion=cls.cot, contenedor=contenedor, cantidad=2, precio_unitario=4000)
+        CotizacionServicio.objects.create(cotizacion=cls.cot, servicio=servicio, cantidad=10, precio_unitario=1200)
+
+    def es_pdf(self, resp):
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["Content-Type"], "application/pdf")
+        self.assertIn(f"cotizacion-{self.cot.numero}.pdf", resp["Content-Disposition"])
+        self.assertTrue(resp.content.startswith(b"%PDF"))
+
+    def test_equipo_descarga_pdf_en_cualquier_estado(self):
+        self.client.force_login(self.staff)
+        self.es_pdf(self.client.get(reverse("cotizaciones:pdf", args=[self.cot.pk])))
+
+    def test_cliente_no_descarga_hasta_que_se_apruebe(self):
+        self.client.force_login(self.user)
+        url = reverse("tienda:pdf_cotizacion", args=[self.cot.pk])
+        self.assertRedirects(self.client.get(url), reverse("tienda:detalle_cotizacion", args=[self.cot.pk]),
+                             fetch_redirect_response=False)
+        Cotizacion.objects.filter(pk=self.cot.pk).update(estado="aprobada")
+        self.es_pdf(self.client.get(url))
+
+    def test_otro_cliente_no_puede_descargarlo(self):
+        Cotizacion.objects.filter(pk=self.cot.pk).update(estado="aprobada")
+        self.client.force_login(self.otro)
+        self.assertEqual(self.client.get(reverse("tienda:pdf_cotizacion", args=[self.cot.pk])).status_code, 404)
+
+    def test_cliente_no_entra_al_pdf_interno(self):
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse("cotizaciones:pdf", args=[self.cot.pk]))
+        self.assertRedirects(resp, reverse("catalogo"), fetch_redirect_response=False)
+
+    def test_formato_de_pesos(self):
+        from .pdf import pesos
+
+        self.assertEqual(pesos(4200), "$4.200")
+        self.assertEqual(pesos(1234567.4), "$1.234.567")

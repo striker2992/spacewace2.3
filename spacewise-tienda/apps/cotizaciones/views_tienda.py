@@ -17,6 +17,7 @@ from apps.core.mixins import SoloClientesMixin, solo_clientes
 from .carrito import CANTIDAD_MAXIMA, CarritoError, actualizar_item, agregar_item, obtener_carrito
 from .forms import CheckoutForm, SolicitudForm, SolicitudItemFormSet, SolicitudServicioFormSet
 from .models import Cotizacion, ItemCarrito, Pedido
+from .pdf import respuesta_pdf
 from .servicios import PedidoError, crear_pedido
 
 
@@ -231,11 +232,15 @@ def solicitar_cotizacion(request):
     )
 
 
+def _cotizaciones_de(user):
+    return Cotizacion.objects.filter(cliente__usuario=user).select_related(
+        "cliente", "vendedor__user"
+    ).prefetch_related("items__contenedor", "servicios__servicio")
+
+
 class _CotizacionesDelUsuario(LoginRequiredMixin):
     def get_queryset(self):
-        return Cotizacion.objects.filter(cliente__usuario=self.request.user).prefetch_related(
-            "items__contenedor", "servicios__servicio"
-        )
+        return _cotizaciones_de(self.request.user)
 
 
 class MisCotizacionesView(_CotizacionesDelUsuario, ListView):
@@ -247,3 +252,13 @@ class MisCotizacionesView(_CotizacionesDelUsuario, ListView):
 class MiCotizacionDetalleView(_CotizacionesDelUsuario, DetailView):
     template_name = "cliente/detalle_cotizacion.html"
     context_object_name = "cotizacion"
+
+
+@login_required
+def mi_cotizacion_pdf(request, pk):
+    """RQ11: el cliente descarga el PDF de su cotización una vez aprobada."""
+    cot = get_object_or_404(_cotizaciones_de(request.user), pk=pk)
+    if cot.estado != Cotizacion.Estado.APROBADA:
+        messages.info(request, "El PDF estará disponible cuando la cotización sea aprobada.")
+        return redirect("tienda:detalle_cotizacion", pk=cot.pk)
+    return respuesta_pdf(cot)

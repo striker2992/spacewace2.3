@@ -42,13 +42,13 @@ El archivo `.env` está en `.gitignore`: **nunca subas contraseñas al repositor
 | `/carrito/`      | **Público.** Carrito en sesión; al iniciar sesión se fusiona con el del usuario |
 | `/carrito/checkout/` | Requiere login. Confirma entrega/contacto y crea el pedido |
 | `/pedidos/`      | Historial de pedidos del cliente |
-| `/cotizaciones/` | Cliente: historial de sus cotizaciones con su estado; `/cotizaciones/solicitar/` para pedir una nueva |
+| `/cotizaciones/` | Cliente: historial de sus cotizaciones con su estado; `/cotizaciones/solicitar/` para pedir una nueva. Descarga el PDF cuando está aprobada |
 | `/accounts/registro/` | Crear cuenta de cliente (User + perfil con RUT, teléfono, empresa, dirección) |
 | `/panel/`        | Panel del equipo interno: totales, resumen de cotizaciones y últimos pedidos |
 | `/panel/contenedores/` | Agregar, editar y eliminar contenedores (precio, stock, foto, visibilidad) |
 | `/panel/contenedores/servicios/` | Servicios adicionales (transporte, instalación, etc.) que se muestran en el catálogo y se agregan a las cotizaciones |
 | `/panel/pedidos/` | Revisar pedidos web y cambiar su estado |
-| `/panel/cotizaciones/` | Bandeja: solicitudes de clientes por valorizar y cotizaciones en curso; aprobar/rechazar |
+| `/panel/cotizaciones/` | Bandeja: solicitudes de clientes por valorizar y cotizaciones en curso; aprobar/rechazar y descargar el PDF formal |
 | `/panel/clientes/` | CRUD de clientes con su actividad |
 | `/admin/`        | Django Admin: no se enlaza desde la app, solo para mantenimiento |
 

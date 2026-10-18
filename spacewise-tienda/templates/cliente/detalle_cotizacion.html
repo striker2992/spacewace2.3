@@ -1,4 +1,5 @@
 {% extends "base_publico.html" %}
+{% load ui %}
 {% block title %}Cotización {{ cotizacion.numero }} · SpaceWise{% endblock %}
 {% block content %}
 <div class="crumbs"><a href="{% url 'tienda:mis_cotizaciones' %}">Mis cotizaciones</a> &rsaquo; {{ cotizacion.numero }}</div>
@@ -7,6 +8,7 @@
     <h1>{{ cotizacion.numero }} <span class="badge {{ cotizacion.badge }}" style="vertical-align:middle">{{ cotizacion.get_estado_display }}</span></h1>
     <p>Creada el {{ cotizacion.fecha|date:"d/m/Y" }}</p>
   </div>
+  {% if cotizacion.estado == "aprobada" %}<a class="btn btn-primary" href="{% url 'tienda:pdf_cotizacion' cotizacion.pk %}">{% icon "file-text" %} Descargar PDF</a>{% endif %}
 </div>
 
 <section class="card">

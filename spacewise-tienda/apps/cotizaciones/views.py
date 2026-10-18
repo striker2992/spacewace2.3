@@ -12,6 +12,7 @@ from apps.vendedores.models import Vendedor
 
 from .forms import CotizacionForm, ItemFormSet, ServicioFormSet
 from .models import Cotizacion
+from .pdf import respuesta_pdf
 
 
 class CotizacionLista(PersonalRequeridoMixin, QueryStringMixin, ListView):
@@ -127,3 +128,15 @@ class CotizacionEliminar(BorrarMixin, DeleteView):
     model = Cotizacion
     success_url = reverse_lazy("cotizaciones:lista")
     success_message = "Cotización eliminada."
+
+
+@personal_requerido
+def cotizacion_pdf(request, pk):
+    """RQ02: documento formal para enviar al cliente."""
+    cot = get_object_or_404(
+        Cotizacion.objects.select_related("cliente", "vendedor__user").prefetch_related(
+            "items__contenedor", "servicios__servicio"
+        ),
+        pk=pk,
+    )
+    return respuesta_pdf(cot)

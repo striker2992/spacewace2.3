@@ -31,10 +31,17 @@
       </select>
     </div>
     <div class="field">
-      <label for="f-cond">Estado</label>
+      <label for="f-cond">Condición</label>
       <select id="f-cond" name="condicion">
         <option value="">Nuevo y usado</option>
         {% for value, label in condiciones %}<option value="{{ value }}" {% if value == condicion %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="f-estado">Disponibilidad</label>
+      <select id="f-estado" name="estado">
+        <option value="">Todas</option>
+        {% for value, label in estados %}<option value="{{ value }}" {% if value == estado %}selected{% endif %}>{{ label }}</option>{% endfor %}
       </select>
     </div>
     <div class="field">
@@ -45,7 +52,7 @@
       <label for="f-pmax">Precio hasta</label>
       <input id="f-pmax" type="number" name="precio_max" value="{{ precio_max }}" min="0" step="1" placeholder="$ máximo">
     </div>
-    <label class="check"><input type="checkbox" name="disponibles" value="1" {% if solo_disponibles %}checked{% endif %}> Solo con stock</label>
+    <label class="check"><input type="checkbox" name="disponibles" value="1" {% if solo_disponibles %}checked{% endif %}> Solo disponibles</label>
     <div class="actions">
       <button class="btn btn-primary" type="submit">Filtrar</button>
       {% if hay_filtros %}<a class="btn" href="{% url 'catalogo' %}">Limpiar</a>{% endif %}
@@ -65,7 +72,7 @@
       <div class="prod-meta">
         <span class="badge info">{{ c.get_tipo_display }}</span>
         <span class="badge">{{ c.get_condicion_display }}</span>
-        {% if c.disponible %}<span class="badge ok">{{ c.stock }} en stock</span>{% else %}<span class="badge bad">Sin stock</span>{% endif %}
+        {% if c.estado != "disponible" %}<span class="badge {{ c.badge_estado }}">{{ c.get_estado_display }}</span>{% elif c.stock %}<span class="badge ok">{{ c.stock }} en stock</span>{% else %}<span class="badge bad">Sin stock</span>{% endif %}
       </div>
       <h3><a href="{{ c.get_absolute_url }}">{{ c.nombre }}</a></h3>
       {% if c.descripcion %}<p class="prod-desc">{{ c.descripcion }}</p>{% endif %}

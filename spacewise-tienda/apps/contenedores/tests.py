@@ -85,3 +85,29 @@ class CatalogoTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         primer_item = resp.context["formset"].forms[0]
         self.assertEqual(primer_item.initial.get("contenedor"), self.nuevo20.pk)
+
+
+class EstadoContenedorTests(TestCase):
+    """Disponible / arrendado / en mantenimiento: solo los disponibles se pueden comprar."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.libre = Contenedor.objects.create(nombre="Libre", tipo="20DC", precio=1000, stock=3)
+        cls.arrendado = Contenedor.objects.create(nombre="Arrendado", tipo="40DC", precio=1000, stock=3, estado="arrendado")
+        cls.taller = Contenedor.objects.create(nombre="En taller", tipo="40HC", precio=1000, stock=3, estado="mantenimiento")
+
+    def test_catalogo_filtra_por_estado(self):
+        resp = self.client.get(reverse("catalogo"), {"estado": "arrendado"})
+        self.assertContains(resp, "Arrendado")
+        self.assertNotContains(resp, "En taller")
+
+    def test_catalogo_muestra_estado_y_bloquea_compra(self):
+        resp = self.client.get(reverse("catalogo"))
+        self.assertContains(resp, "En mantenimiento")
+        self.assertFalse(self.arrendado.disponible)
+        self.assertTrue(self.libre.disponible)
+
+    def test_no_se_puede_agregar_al_carrito(self):
+        self.client.post(reverse("tienda:agregar", args=[self.taller.pk]), {"cantidad": 1})
+        resp = self.client.get(reverse("tienda:carrito"))
+        self.assertNotContains(resp, "En taller")

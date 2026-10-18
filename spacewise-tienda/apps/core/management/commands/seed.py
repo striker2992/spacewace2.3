@@ -55,7 +55,7 @@ class Command(BaseCommand):
                 razon_social="Fuentes y Cía.", email=comprador.email,
                 telefono="+56 9 5555 0101", direccion="Av. Costanera 1234, Coronel",
             )
-            self.stdout.write("Cliente de tienda cliente / demo1234 creado.")
+            self.stdout.write("Cliente de tienda camila@ejemplo.cl / demo1234 creado.")
 
         if Contenedor.objects.exists():
             self.stdout.write("Ya hay datos; no se cargó nada más.")
@@ -84,6 +84,11 @@ class Command(BaseCommand):
             )
             for n, t, c, p, s, u in catalogo
         ]
+        # Algunos con otra disponibilidad, para ver los estados en el catálogo
+        contenedores[2].estado = Contenedor.Estado.ARRENDADO
+        contenedores[4].estado = Contenedor.Estado.MANTENIMIENTO
+        for c in (contenedores[2], contenedores[4]):
+            c.save(update_fields=["estado"])
 
         nombres = [
             "Agencia Alpha", "Construcciones S.A.", "Mercado Central", "Taller Mecánico",

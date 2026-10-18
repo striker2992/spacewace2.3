@@ -12,7 +12,7 @@
       <div class="prod-meta" style="margin-bottom:8px">
         <span class="badge info">{{ contenedor.get_tipo_display }}</span>
         <span class="badge">{{ contenedor.get_condicion_display }}</span>
-        {% if contenedor.disponible %}<span class="badge ok">{{ contenedor.stock }} en stock</span>{% else %}<span class="badge bad">Sin stock</span>{% endif %}
+        {% if contenedor.estado != "disponible" %}<span class="badge {{ contenedor.badge_estado }}">{{ contenedor.get_estado_display }}</span>{% elif contenedor.stock %}<span class="badge ok">{{ contenedor.stock }} en stock</span>{% else %}<span class="badge bad">Sin stock</span>{% endif %}
       </div>
       <h1 style="margin:0 0 8px;font-size:24px">{{ contenedor.nombre }}</h1>
       <div class="prod-price" style="margin:0">${{ contenedor.precio|floatformat:"0g" }} <small>por unidad</small></div>
@@ -38,7 +38,8 @@
       <h2>Ficha técnica</h2>
       <ul class="spec-list">
         <li><b>Tipo:</b> {{ contenedor.get_tipo_display }}</li>
-        <li><b>Estado:</b> {{ contenedor.get_condicion_display }}</li>
+        <li><b>Condición:</b> {{ contenedor.get_condicion_display }}</li>
+        <li><b>Disponibilidad:</b> {{ contenedor.get_estado_display }}</li>
         {% if contenedor.ubicacion %}<li><b>Ubicación:</b> {{ contenedor.ubicacion }}</li>{% endif %}
         {% for linea in contenedor.lista_especificaciones %}<li>{{ linea }}</li>{% endfor %}
       </ul>

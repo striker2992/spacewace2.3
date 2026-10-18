@@ -7,10 +7,10 @@ class ContenedorForm(forms.ModelForm):
     class Meta:
         model = Contenedor
         fields = [
-            "nombre", "tipo", "condicion", "precio", "stock", "ubicacion",
+            "nombre", "tipo", "condicion", "estado", "precio", "stock", "ubicacion",
             "descripcion", "especificaciones", "imagen", "activo",
         ]
-        labels = {"condicion": "Estado", "activo": "Visible en el catálogo"}
+        labels = {"estado": "Disponibilidad", "activo": "Visible en el catálogo"}
         widgets = {
             "descripcion": forms.Textarea(attrs={"rows": 3}),
             "especificaciones": forms.Textarea(attrs={"rows": 4}),

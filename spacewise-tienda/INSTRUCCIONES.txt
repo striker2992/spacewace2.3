@@ -16,4 +16,4 @@ SPACEWISE - PUESTA EN MARCHA (PowerShell, desde esta carpeta)
 
 4) Abrir http://127.0.0.1:8000/
    admin / admin1234   (entra a /admin/)
-   cliente / demo1234  (tienda)
+   camila@ejemplo.cl / demo1234  (tienda, se entra con el correo)

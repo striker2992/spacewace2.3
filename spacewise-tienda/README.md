@@ -16,7 +16,7 @@ python manage.py runserver
 ```
 
 Abre http://127.0.0.1:8000/catalogo/ (público). Equipo interno: http://127.0.0.1:8000/accounts/login/ con `seed`: `admin` / `admin1234` (cámbiala).
-Cliente de prueba para la tienda: `cliente` / `demo1234`.
+Cliente de prueba para la tienda: `camila@ejemplo.cl` / `demo1234` (los clientes inician sesión con su correo).
 Sin `seed`, crea tu usuario con `python manage.py createsuperuser`.
 
 Por defecto usa **SQLite** (archivo `db.sqlite3`), así que no necesitas instalar nada más.

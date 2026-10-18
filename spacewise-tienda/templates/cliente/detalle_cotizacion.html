@@ -8,7 +8,14 @@
     <h1>{{ cotizacion.numero }} <span class="badge {{ cotizacion.badge }}" style="vertical-align:middle">{{ cotizacion.get_estado_display }}</span></h1>
     <p>Creada el {{ cotizacion.fecha|date:"d/m/Y" }}</p>
   </div>
-  {% if cotizacion.estado == "aprobada" %}<a class="btn btn-primary" href="{% url 'tienda:pdf_cotizacion' cotizacion.pk %}">{% icon "file-text" %} Descargar PDF</a>{% endif %}
+  <div class="actions">
+    {% if cotizacion.estado == "aprobada" %}
+    <a class="btn btn-primary" href="{% url 'tienda:pdf_cotizacion' cotizacion.pk %}" target="_blank" rel="noopener">{% icon "file-text" %} Ver PDF</a>
+    <a class="btn" href="{% url 'tienda:pdf_cotizacion' cotizacion.pk %}?descargar=1">Descargar PDF</a>
+    {% else %}
+    <button class="btn" type="button" disabled title="Disponible cuando la cotización sea aprobada">{% icon "file-text" %} PDF disponible al aprobarse</button>
+    {% endif %}
+  </div>
 </div>
 
 <section class="card">

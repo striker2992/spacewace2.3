@@ -132,7 +132,21 @@ class PdfCotizacionTests(TestCase):
 
     def test_equipo_descarga_pdf_en_cualquier_estado(self):
         self.client.force_login(self.staff)
-        self.es_pdf(self.client.get(reverse("cotizaciones:pdf", args=[self.cot.pk])))
+        url = reverse("cotizaciones:pdf", args=[self.cot.pk])
+        resp = self.client.get(url)
+        self.es_pdf(resp)
+        self.assertTrue(resp["Content-Disposition"].startswith("inline"))  # se abre en el navegador
+        resp = self.client.get(url, {"descargar": "1"})
+        self.assertTrue(resp["Content-Disposition"].startswith("attachment"))  # se guarda como archivo
+        self.assertContains(self.client.get(reverse("cotizaciones:lista")), url)  # botón en la bandeja
+
+    def test_sin_reportlab_avisa_y_no_rompe(self):
+        from unittest import mock
+
+        self.client.force_login(self.staff)
+        with mock.patch("apps.cotizaciones.pdf.REPORTLAB_DISPONIBLE", False):
+            resp = self.client.get(reverse("cotizaciones:pdf", args=[self.cot.pk]), follow=True)
+        self.assertContains(resp, "falta la librería reportlab")
 
     def test_cliente_no_descarga_hasta_que_se_apruebe(self):
         self.client.force_login(self.user)

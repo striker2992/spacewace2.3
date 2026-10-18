@@ -3,19 +3,28 @@
 from datetime import timedelta
 from io import BytesIO
 
+from django.contrib import messages
 from django.http import HttpResponse
+from django.shortcuts import redirect
 from django.utils import timezone
-from reportlab.lib import colors
-from reportlab.lib.enums import TA_RIGHT
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.lib.units import mm
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-AZUL = colors.HexColor("#2563eb")
-GRIS = colors.HexColor("#6b7280")
-LINEA = colors.HexColor("#e5e7eb")
-FONDO = colors.HexColor("#f3f4f6")
+# Si reportlab no está instalado, el resto del sitio sigue funcionando y solo el PDF avisa del problema.
+try:
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_RIGHT
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.lib.units import mm
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+    REPORTLAB_DISPONIBLE = True
+    AZUL = colors.HexColor("#2563eb")
+    GRIS = colors.HexColor("#6b7280")
+    LINEA = colors.HexColor("#e5e7eb")
+    FONDO = colors.HexColor("#f3f4f6")
+except ImportError:
+    REPORTLAB_DISPONIBLE = False
+
 VALIDEZ_DIAS = 15
 
 
@@ -134,8 +143,19 @@ def generar_pdf(cot):
     return buffer.getvalue()
 
 
-def respuesta_pdf(cot):
-    """HttpResponse para descargar el PDF con un nombre de archivo claro."""
+def respuesta_pdf(request, cot, volver_a):
+    """Muestra el PDF en el navegador; con ?descargar=1 lo baja como archivo.
+
+    `volver_a` es la página a la que se regresa si el PDF no se puede generar.
+    """
+    if not REPORTLAB_DISPONIBLE:
+        messages.error(
+            request,
+            "No se pudo generar el PDF: falta la librería reportlab. "
+            "Instálala con «pip install -r requirements\\base.txt» y reinicia el servidor.",
+        )
+        return redirect(volver_a)
+    modo = "attachment" if request.GET.get("descargar") else "inline"
     resp = HttpResponse(generar_pdf(cot), content_type="application/pdf")
-    resp["Content-Disposition"] = f'attachment; filename="cotizacion-{cot.numero}.pdf"'
+    resp["Content-Disposition"] = f'{modo}; filename="cotizacion-{cot.numero}.pdf"'
     return resp

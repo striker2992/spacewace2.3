@@ -20,7 +20,8 @@
     <form class="inline" method="post" action="{% url 'cotizaciones:estado' cotizacion.pk %}">{% csrf_token %}<input type="hidden" name="estado" value="rechazada"><button class="btn btn-danger" type="submit">{% icon "x" %} Rechazar</button></form>
     {% endif %}
     {% if cotizacion.estado != "solicitada" %}<a class="btn" href="{% url 'cotizaciones:editar' cotizacion.pk %}">Editar</a>{% endif %}
-    <a class="btn" href="{% url 'cotizaciones:pdf' cotizacion.pk %}">{% icon "file-text" %} Descargar PDF</a>
+    <a class="btn" href="{% url 'cotizaciones:pdf' cotizacion.pk %}" target="_blank" rel="noopener">{% icon "file-text" %} Ver PDF</a>
+    <a class="btn" href="{% url 'cotizaciones:pdf' cotizacion.pk %}?descargar=1">Descargar PDF</a>
     <a class="btn btn-danger" href="{% url 'cotizaciones:eliminar' cotizacion.pk %}" aria-label="Eliminar">{% icon "trash" %}</a>
   </div>
 </div>

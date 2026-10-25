@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Reporte mensual · SpaceWise{% endblock %}
+{% block content %}
+{% with a=actual %}
+<div class="page-title">
+  <div><h1>Reporte de {{ a.nombre }}</h1><p>Volumen de ventas y cotizaciones procesadas{% if es_mes_actual %} (mes en curso){% endif %}.</p></div>
+  <a class="btn" href="?mes={{ a.clave }}&amp;formato=csv">{% icon "file-text" %} Descargar CSV</a>
+</div>
+
+<div class="toolbar">
+  <form method="get">
+    <a class="btn" href="?mes={{ mes_anterior }}" aria-label="Mes anterior">&larr;</a>
+    <select name="mes" onchange="this.form.submit()" aria-label="Mes del reporte">
+      {% for valor, etiqueta in opciones_mes %}<option value="{{ valor }}" {% if valor == a.clave %}selected{% endif %}>{{ etiqueta|capfirst }}</option>{% endfor %}
+    </select>
+    {% if mes_siguiente %}<a class="btn" href="?mes={{ mes_siguiente }}" aria-label="Mes siguiente">&rarr;</a>{% endif %}
+    <noscript><button class="btn" type="submit">Ver</button></noscript>
+  </form>
+</div>
+
+<section class="card">
+  <h2>Ventas</h2>
+  <div class="stats">
+    <div class="stat"><small>Ventas del mes</small><strong>${{ a.ventas|floatformat:"0g" }}</strong>{% include "core/_variacion.html" with v=var_ventas %}</div>
+    <div class="stat"><small>Pedidos</small><strong>{{ a.pedidos }}</strong></div>
+    <div class="stat"><small>Ticket promedio</small><strong>${{ a.ticket|floatformat:"0g" }}</strong></div>
+    <div class="stat"><small>Garantías solicitadas</small><strong>{{ a.garantias }}</strong></div>
+  </div>
+  <h2 style="margin-top:22px">Cotizaciones</h2>
+  <div class="stats">
+    <div class="stat"><small>Recibidas</small><strong>{{ a.recibidas }}</strong>{% include "core/_variacion.html" with v=var_cotizaciones %}</div>
+    <div class="stat"><small>Aprobadas</small><strong>{{ a.aprobadas }}</strong></div>
+    <div class="stat"><small>Rechazadas</small><strong>{{ a.rechazadas }}</strong></div>
+    <div class="stat"><small>Tasa de aprobación</small><strong>{% if a.tasa_aprobacion is None %}—{% else %}{{ a.tasa_aprobacion }}%{% endif %}</strong><span class="delta muted">{{ a.en_curso }} en curso</span></div>
+  </div>
+  <p class="muted" style="margin:14px 0 0;font-size:12px">Ventas: pedidos no cancelados creados en el mes. Cotizaciones: según su fecha; la tasa de aprobación considera solo las ya resueltas.</p>
+</section>
+
+<section class="card chart-card">
+  <h2>Ventas de los últimos 12 meses</h2>
+  <p class="muted" style="margin:-8px 0 14px;font-size:12px">Monto mensual de pedidos no cancelados. Pasa el cursor o enfoca una columna para ver el detalle.</p>
+  <ol class="col-chart" aria-label="Ventas por mes; los valores están en la tabla siguiente">
+    {% for m in serie %}
+    <li class="col{% if m.clave == a.clave %} sel{% endif %}" tabindex="0"
+        data-titulo="{{ m.nombre|capfirst }}" data-valor="${{ m.ventas|floatformat:'0g' }}" data-detalle="{{ m.pedidos }} pedido{{ m.pedidos|pluralize }} · {{ m.recibidas }} cotizaci{{ m.recibidas|pluralize:'ón,ones' }}">
+      <span class="col-plot">
+        <span class="col-bar" style="height:{{ m.alto|stringformat:'s' }}%">
+          {% if m.ventas and m.clave == a.clave or m.ventas and m.alto == 100 %}<span class="col-valor">${{ m.ventas|floatformat:"0g" }}</span>{% endif %}
+        </span>
+      </span>
+      <span class="col-mes">{{ m.mes_corto }}<small>{{ m.anio_corto }}</small></span>
+    </li>
+    {% endfor %}
+  </ol>
+  <div class="col-tooltip" role="status" hidden><strong></strong><span></span><small></small></div>
+</section>
+
+<div class="grid-2">
+  <section class="card">
+    <h2>Contenedores más vendidos</h2>
+    {% for v in vendidos %}
+    <div class="line-item"><span>{{ v.contenedor__nombre }} <small class="muted">· {{ v.pedidos }} pedido{{ v.pedidos|pluralize }}</small></span><b>{{ v.cantidad }} u.</b></div>
+    {% empty %}<p class="muted" style="margin:0">Sin ventas en {{ a.nombre }}.</p>{% endfor %}
+  </section>
+  <section class="card">
+    <h2>Contenedores más cotizados</h2>
+    {% for c in cotizados %}
+    <div class="line-item"><span>{{ c.contenedor__nombre }} <small class="muted">· {{ c.cantidad }} u.</small></span><b>{{ c.cotizaciones }} cotizaci{{ c.cotizaciones|pluralize:"ón,ones" }}</b></div>
+    {% empty %}<p class="muted" style="margin:0">Sin cotizaciones en {{ a.nombre }}.</p>{% endfor %}
+  </section>
+</div>
+
+<section class="card">
+  <h2>Clientes frecuentes</h2>
+  {% for c in clientes %}
+  <div class="line-item"><span>{{ c.cliente__nombre }} <small class="muted">· {{ c.pedidos }} pedido{{ c.pedidos|pluralize }}</small></span><b>${{ c.total|floatformat:"0g" }}</b></div>
+  {% empty %}<p class="muted" style="margin:0">Sin compras en {{ a.nombre }}.</p>{% endfor %}
+</section>
+
+<section class="card">
+  <h2>Resumen de los últimos 12 meses</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>MES</th><th class="num">PEDIDOS</th><th class="num">VENTAS</th><th class="num">COTIZACIONES</th><th class="num">APROBADAS</th><th class="num">RECHAZADAS</th><th class="num">TASA APROB.</th></tr></thead>
+      <tbody>
+      {% for m in serie reversed %}
+        <tr{% if m.clave == a.clave %} class="row-sel"{% endif %}>
+          <td><a href="?mes={{ m.clave }}">{{ m.nombre|capfirst }}</a></td>
+          <td class="num">{{ m.pedidos }}</td>
+          <td class="num">${{ m.ventas|floatformat:"0g" }}</td>
+          <td class="num">{{ m.recibidas }}</td>
+          <td class="num">{{ m.aprobadas }}</td>
+          <td class="num">{{ m.rechazadas }}</td>
+          <td class="num">{% if m.tasa_aprobacion is None %}—{% else %}{{ m.tasa_aprobacion }}%{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endwith %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Tooltip de las columnas (hover y teclado). Se usa textContent: los datos no se interpretan como HTML.
+(function () {
+  var tip = document.querySelector(".col-tooltip");
+  if (!tip) return;
+  var partes = tip.children;
+  function mostrar(col) {
+    partes[0].textContent = col.dataset.valor;
+    partes[1].textContent = col.dataset.titulo;
+    partes[2].textContent = col.dataset.detalle;
+    tip.hidden = false;
+    var r = col.getBoundingClientRect(), c = tip.parentElement.getBoundingClientRect();
+    var x = r.left - c.left + r.width / 2 - tip.offsetWidth / 2;
+    tip.style.left = Math.max(8, Math.min(x, c.width - tip.offsetWidth - 8)) + "px";
+    tip.style.top = (r.top - c.top - tip.offsetHeight + 8) + "px";
+  }
+  function ocultar() { tip.hidden = true; }
+  document.querySelectorAll(".col-chart .col").forEach(function (col) {
+    col.addEventListener("pointerenter", function () { mostrar(col); });
+    col.addEventListener("focus", function () { mostrar(col); });
+    col.addEventListener("pointerleave", ocultar);
+    col.addEventListener("blur", ocultar);
+  });
+})();
+</script>
+{% endblock %}

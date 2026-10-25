@@ -167,8 +167,8 @@ input:focus, select:focus, textarea:focus, .btn:focus-visible { outline: 2px sol
 .pub-bar { max-width: 1120px; margin: 0 auto; padding: 0 20px; height: 60px; display: flex; align-items: center; gap: 22px; }
 .pub-bar .brand { padding: 0; color: var(--text); }
 .pub-bar .brand:hover { text-decoration: none; }
-.pub-nav { display: flex; gap: 4px; }
-.pub-nav a { padding: 8px 12px; border-radius: 8px; color: #4b5563; font-weight: 500; }
+.pub-nav { display: flex; gap: 2px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.pub-nav a { padding: 8px 9px; border-radius: 8px; color: #4b5563; font-weight: 500; white-space: nowrap; }
 .pub-nav a:hover { background: #f3f4f6; text-decoration: none; }
 .pub-nav a.active { background: #eaf1ff; color: var(--primary); }
 .pub-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
@@ -287,3 +287,29 @@ td .actions { justify-content: flex-end; flex-wrap: nowrap; }
 .serv { border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 6px; }
 .serv-precio { font-weight: 700; margin-top: auto; }
 .serv-precio small { font-weight: 500; color: var(--muted); }
+
+/* reporte mensual (RQ14) */
+.stat .delta { display: block; margin-top: 6px; font-size: 12px; font-weight: 500; }
+.stat .delta.up { color: var(--ok); }
+.stat .delta.down { color: var(--bad); }
+.chart-card { position: relative; }
+.col-chart { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 2px; border-bottom: 1px solid var(--line); }
+.col-chart .col { display: flex; flex-direction: column; align-items: center; outline: none; cursor: default; border-radius: 6px; }
+.col-chart .col:hover, .col-chart .col:focus-visible { background: #f3f4f6; }
+.col-chart .col:focus-visible { box-shadow: 0 0 0 2px var(--primary); }
+.col-plot { height: 200px; width: 100%; padding-top: 24px; display: flex; align-items: flex-end; justify-content: center; }
+.col-bar { position: relative; width: min(24px, 70%); background: var(--primary); border-radius: 4px 4px 0 0; }
+.col-valor { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 4px; font-size: 11px; font-weight: 600; white-space: nowrap; color: var(--text); }
+.col-mes { padding: 6px 0 4px; font-size: 11px; color: var(--muted); text-align: center; line-height: 1.2; }
+.col-mes small { display: block; font-size: 10px; }
+.col.sel .col-mes { color: var(--text); font-weight: 700; }
+.col-tooltip { position: absolute; z-index: 5; pointer-events: none; background: var(--card); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 6px 20px rgba(17, 24, 39, .12); padding: 8px 10px; min-width: 140px; }
+.col-tooltip strong { display: block; font-size: 15px; }
+.col-tooltip span, .col-tooltip small { display: block; color: var(--muted); font-size: 12px; }
+.line-item { display: flex; justify-content: space-between; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.line-item:last-child { border-bottom: 0; }
+tr.row-sel td { background: #eaf1ff; }
+@media (max-width: 600px) {
+  .col-plot { height: 150px; }
+  .col-valor { display: none; }  /* sin espacio: el valor queda en el tooltip y en la tabla */
+}

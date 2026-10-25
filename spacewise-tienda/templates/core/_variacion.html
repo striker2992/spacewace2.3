@@ -1,0 +1,1 @@
+{% if v is None %}<span class="delta muted">sin datos del mes anterior</span>{% elif v > 0 %}<span class="delta up">&#9650; +{{ v }}% vs mes anterior</span>{% elif v < 0 %}<span class="delta down">&#9660; {{ v }}% vs mes anterior</span>{% else %}<span class="delta muted">= igual que el mes anterior</span>{% endif %}

@@ -59,6 +59,7 @@ El archivo `.env` está en `.gitignore`: **nunca subas contraseñas al repositor
 | `/panel/cotizaciones/` | Bandeja: solicitudes de clientes por valorizar y cotizaciones en curso; aprobar/rechazar y descargar el PDF formal |
 | `/panel/garantias/` | Bandeja de garantías: revisar solicitudes y registrar la resolución (aprobada/rechazada) |
 | `/panel/clientes/` | CRUD de clientes con su actividad |
+| `/panel/reportes/` | Reporte mensual: ventas, cotizaciones procesadas, más vendidos/cotizados, clientes frecuentes y los últimos 12 meses; descarga en CSV (Excel) |
 | `/admin/`        | Django Admin: no se enlaza desde la app, solo para mantenimiento |
 
 El equipo interno (admins y vendedores) **no puede comprar** en la tienda: carrito y checkout lo devuelven al panel.

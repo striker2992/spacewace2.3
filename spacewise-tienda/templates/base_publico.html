@@ -22,6 +22,7 @@
       <a href="{% url 'cotizaciones:lista' %}" class="{% if ns == 'cotizaciones' %}active{% endif %}">Cotizaciones{% if solicitudes_nuevas %} <span class="nav-badge" title="Solicitudes por valorizar">{{ solicitudes_nuevas }}</span>{% endif %}</a>
       <a href="{% url 'garantias:lista' %}" class="{% if ns == 'garantias' %}active{% endif %}">Garantías{% if garantias_pendientes %} <span class="nav-badge" title="Garantías por revisar">{{ garantias_pendientes }}</span>{% endif %}</a>
       <a href="{% url 'clientes:lista' %}" class="{% if ns == 'clientes' %}active{% endif %}">Clientes</a>
+      <a href="{% url 'reportes' %}" class="{% if url == 'reportes' %}active{% endif %}">Reportes</a>
       <a href="{% url 'catalogo' %}" class="{% if url == 'catalogo' or url == 'detalle_contenedor' %}active{% endif %}">Catálogo</a>
       {% else %}
       <a href="{% url 'catalogo' %}" class="{% if url == 'catalogo' or url == 'detalle_contenedor' %}active{% endif %}">Catálogo</a>

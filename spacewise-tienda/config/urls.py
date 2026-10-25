@@ -6,7 +6,7 @@ from django.urls import include, path
 
 from apps.clientes.views import CambiarClaveView, PerfilView, RegistroView
 from apps.contenedores.views import CatalogoView, ContenedorDetalleView
-from apps.core.views import LoginView, dashboard, inicio
+from apps.core.views import LoginView, dashboard, inicio, reporte_mensual
 
 urlpatterns = [
     # Django Admin: no se enlaza desde ninguna pantalla; queda solo para mantenimiento.
@@ -25,6 +25,7 @@ urlpatterns = [
     path("", include("apps.cotizaciones.urls_tienda")),
     # Panel del equipo interno (admins y vendedores)
     path("panel/", dashboard, name="dashboard"),
+    path("panel/reportes/", reporte_mensual, name="reportes"),
     path("panel/contenedores/", include("apps.contenedores.urls")),
     path("panel/clientes/", include("apps.clientes.urls")),
     path("panel/cotizaciones/", include("apps.cotizaciones.urls")),

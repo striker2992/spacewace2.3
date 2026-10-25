@@ -1,8 +1,14 @@
+import secrets
+
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
+
+
+def nuevo_token():
+    return secrets.token_urlsafe(16)
 
 
 class Cotizacion(models.Model):
@@ -32,6 +38,8 @@ class Cotizacion(models.Model):
     origen = models.CharField(max_length=10, choices=Origen.choices, default=Origen.EQUIPO)
     fecha_requerida = models.DateField("¿Para cuándo lo necesitas?", null=True, blank=True)
     direccion_entrega = models.CharField("Dirección de entrega", max_length=255, blank=True)
+    # RQ05: código secreto del enlace público /c/<token>/ (128 bits, no se puede adivinar).
+    token = models.CharField(max_length=32, unique=True, null=True, editable=False)
     creado = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -65,6 +73,19 @@ class Cotizacion(models.Model):
         pasos = [(e.value, "Valorizada" if e == self.Estado.PENDIENTE else e.label) for e in orden + [final]]
         actual = [v for v, _ in pasos].index(self.estado)
         return [(v, etiqueta, "done" if i < actual else "current" if i == actual else "") for i, (v, etiqueta) in enumerate(pasos)]
+
+    def save(self, *args, **kwargs):
+        if not self.token:
+            self.token = nuevo_token()
+        super().save(*args, **kwargs)
+
+    def renovar_enlace(self):
+        """Genera un enlace nuevo; el anterior deja de funcionar."""
+        self.token = nuevo_token()
+        self.save(update_fields=["token"])
+
+    def get_enlace_publico(self):
+        return reverse("cotizacion_publica", args=[self.token])
 
     @property
     def pedido_vigente(self):

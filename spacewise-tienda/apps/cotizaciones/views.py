@@ -147,3 +147,13 @@ def cotizacion_pdf(request, pk):
         pk=pk,
     )
     return respuesta_pdf(request, cot, cot.get_absolute_url())
+
+
+@personal_requerido
+@require_POST
+def cotizacion_renovar_enlace(request, pk):
+    """RQ05: invalida el enlace público anterior (p. ej. si se compartió por error)."""
+    cot = get_object_or_404(Cotizacion, pk=pk)
+    cot.renovar_enlace()
+    messages.success(request, f"{cot.numero}: se generó un enlace nuevo; el anterior ya no funciona.")
+    return redirect(cot)

@@ -85,4 +85,5 @@
 {% endif %}
 
 {% if cotizacion.notas and cotizacion.origen != "web" %}<section class="card"><h2>Notas</h2><p style="margin:0">{{ cotizacion.notas|linebreaksbr }}</p></section>{% endif %}
+{% include "cotizaciones/_enlace_publico.html" with url_renovar="cotizaciones:renovar_enlace" %}
 {% endblock %}

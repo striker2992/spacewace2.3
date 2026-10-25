@@ -1,0 +1,22 @@
+{% load ui %}
+<section class="card">
+  <h2>Enlace para ver el estado</h2>
+  <p class="muted" style="margin:-6px 0 12px;font-size:12px">Cualquiera con este enlace puede ver el estado y el detalle sin iniciar sesión (sin datos personales ni PDF).</p>
+  <div class="share-row">
+    <input type="text" readonly value="{{ request.scheme }}://{{ request.get_host }}{{ cotizacion.get_enlace_publico }}" aria-label="Enlace de la cotización" onclick="this.select()">
+    <button class="btn btn-primary" type="button" data-copiar>Copiar enlace</button>
+    <form class="inline" method="post" action="{% url url_renovar cotizacion.pk %}" onsubmit="return confirm('¿Generar un enlace nuevo? El anterior dejará de funcionar.')">
+      {% csrf_token %}<button class="btn" type="submit">Generar uno nuevo</button>
+    </form>
+  </div>
+</section>
+<script>
+document.querySelectorAll("[data-copiar]").forEach(function (b) {
+  b.addEventListener("click", function () {
+    var campo = b.parentElement.querySelector("input");
+    var listo = function () { b.textContent = "¡Copiado!"; setTimeout(function () { b.textContent = "Copiar enlace"; }, 2000); };
+    if (navigator.clipboard) { navigator.clipboard.writeText(campo.value).then(listo); }
+    else { campo.select(); document.execCommand("copy"); listo(); }
+  });
+});
+</script>

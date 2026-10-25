@@ -6,6 +6,7 @@ from django.urls import include, path
 
 from apps.clientes.views import CambiarClaveView, PerfilView, RegistroView
 from apps.contenedores.views import CatalogoView, ContenedorDetalleView
+from apps.cotizaciones.views_tienda import cotizacion_publica
 from apps.core.views import LoginView, dashboard, inicio, reporte_mensual
 
 urlpatterns = [
@@ -21,6 +22,8 @@ urlpatterns = [
     path("", inicio, name="inicio"),
     path("catalogo/", CatalogoView.as_view(), name="catalogo"),
     path("catalogo/<int:pk>/", ContenedorDetalleView.as_view(), name="detalle_contenedor"),
+    # RQ05: enlace único de una cotización (sin iniciar sesión)
+    path("c/<str:token>/", cotizacion_publica, name="cotizacion_publica"),
     # Tienda del cliente: /carrito/, /checkout/, /pedidos/
     path("", include("apps.cotizaciones.urls_tienda")),
     # Panel del equipo interno (admins y vendedores)

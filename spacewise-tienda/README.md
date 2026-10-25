@@ -50,6 +50,7 @@ El archivo `.env` está en `.gitignore`: **nunca subas contraseñas al repositor
 | `/pedidos/`      | Historial de pedidos del cliente |
 | `/cotizaciones/` | Cliente: historial de sus cotizaciones con su estado; `/cotizaciones/solicitar/` para pedir una nueva. Descarga el PDF y la **compra** (`/cotizaciones/<id>/comprar/`) con los precios valorizados cuando está aprobada |
 | `/pedidos/<id>/garantia/` | Cliente: solicitar garantía de un pedido despachado o completado; `/garantias/` lista sus solicitudes y la resolución |
+| `/c/<código>/` | **Público.** Enlace único para ver el estado y detalle de una cotización sin iniciar sesión (sin datos personales ni PDF). El cliente y el equipo lo copian o lo regeneran desde el detalle |
 | `/accounts/registro/` | Crear cuenta de cliente (User + perfil con RUT, teléfono, empresa, dirección) |
 | `/accounts/perfil/` | Mi perfil: editar datos de cuenta, contacto y facturación; `/accounts/perfil/clave/` cambia la contraseña |
 | `/panel/`        | Panel del equipo interno: totales, resumen de cotizaciones y últimos pedidos |

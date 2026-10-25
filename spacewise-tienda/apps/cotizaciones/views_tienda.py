@@ -311,3 +311,29 @@ class ComprarCotizacionView(SoloClientesMixin, LoginRequiredMixin, FormView):
             messages.error(self.request, str(e))
             return redirect("tienda:detalle_cotizacion", pk=self.cotizacion.pk)
         return redirect("tienda:confirmacion", pk=pedido.pk)
+
+
+# ---------------------------------------------------------------------------
+# RQ05: enlace único para ver el estado sin iniciar sesión
+# ---------------------------------------------------------------------------
+def cotizacion_publica(request, token):
+    """Estado y detalle de una cotización para quien tenga el enlace. Sin datos personales ni PDF."""
+    cot = get_object_or_404(
+        Cotizacion.objects.prefetch_related("items__contenedor", "servicios__servicio"), token=token
+    )
+    resp = render(request, "cliente/cotizacion_publica.html", {
+        "cotizacion": cot,
+        "es_duenio": request.user.is_authenticated and cot.cliente.usuario_id == request.user.pk,
+    })
+    resp["X-Robots-Tag"] = "noindex, nofollow"  # que los buscadores no la indexen
+    resp["Referrer-Policy"] = "no-referrer"  # el código no viaja a otros sitios al hacer clic
+    return resp
+
+
+@login_required
+@require_POST
+def renovar_enlace(request, pk):
+    cot = get_object_or_404(_cotizaciones_de(request.user), pk=pk)
+    cot.renovar_enlace()
+    messages.success(request, "Generamos un enlace nuevo; el anterior ya no funciona.")
+    return redirect("tienda:detalle_cotizacion", pk=cot.pk)

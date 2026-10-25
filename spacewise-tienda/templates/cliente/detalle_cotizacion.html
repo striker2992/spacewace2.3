@@ -65,4 +65,5 @@
   {% if cotizacion.notas %}<p style="margin:0"><b>Comentarios:</b> {{ cotizacion.notas|linebreaksbr }}</p>{% endif %}
 </section>
 {% endif %}
+{% include "cotizaciones/_enlace_publico.html" with url_renovar="tienda:renovar_enlace" %}
 {% endblock %}

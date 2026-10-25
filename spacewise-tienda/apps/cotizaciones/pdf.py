@@ -44,7 +44,7 @@ def _estilos():
     }
 
 
-def generar_pdf(cot):
+def generar_pdf(cot, enlace=None):
     """Devuelve los bytes del PDF de la cotización `cot` (con items y servicios)."""
     e = _estilos()
     buffer = BytesIO()
@@ -136,6 +136,8 @@ def generar_pdf(cot):
     ]
     if vendedor:
         condiciones.append(f"Ejecutivo de venta: {vendedor}.")
+    if enlace:  # RQ05
+        condiciones.append(f"Revisa el estado en línea: {enlace}")
     partes += [Spacer(1, 6), Paragraph("Condiciones", e["seccion"]),
                Paragraph("<br/>".join(condiciones), e["chico"])]
 
@@ -156,6 +158,7 @@ def respuesta_pdf(request, cot, volver_a):
         )
         return redirect(volver_a)
     modo = "attachment" if request.GET.get("descargar") else "inline"
-    resp = HttpResponse(generar_pdf(cot), content_type="application/pdf")
+    enlace = request.build_absolute_uri(cot.get_enlace_publico()) if cot.token else None
+    resp = HttpResponse(generar_pdf(cot, enlace), content_type="application/pdf")
     resp["Content-Disposition"] = f'{modo}; filename="cotizacion-{cot.numero}.pdf"'
     return resp

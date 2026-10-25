@@ -313,3 +313,7 @@ tr.row-sel td { background: #eaf1ff; }
   .col-plot { height: 150px; }
   .col-valor { display: none; }  /* sin espacio: el valor queda en el tooltip y en la tabla */
 }
+
+/* enlace público de cotización (RQ05) */
+.share-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.share-row input { flex: 1 1 280px; min-width: 0; }

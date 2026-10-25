@@ -144,19 +144,36 @@ sin `--clave-equipo` (las claves de ejemplo están publicadas en este README). L
 
 ### Según el hosting
 
-- **PythonAnywhere** (recomendado para la demo: incluye MySQL en el plan gratuito).
-  En *Databases* crea la base (el host es `<usuario>.mysql.pythonanywhere-services.com` y el nombre
-  `<usuario>$spacewise`). En *Web*: configuración manual con Python 3.x, en el archivo WSGI apunta a
-  `spacewise-tienda` y `config.wsgi`; agrega los *static files* `/static/` → `.../spacewise-tienda/staticfiles`
-  y `/media/` → `.../spacewise-tienda/media` (y entonces `DJANGO_SERVIR_MEDIA=0`); activa *Force HTTPS*.
-  No usa `gunicorn` ni el `Procfile`.
+- **PythonAnywhere**. Ojo: desde el 15-01-2026 las cuentas gratuitas **nuevas no incluyen MySQL**
+  (lo tienen el plan Developer, 10 USD/mes, y las cuentas gratuitas creadas antes de esa fecha). Las web
+  apps gratuitas vencen al mes si no se pulsa *Run until 1 month from today* en la pestaña *Web*.
+  1. *Databases*: define la clave de MySQL y crea la base `spacewise`. En `.env`:
+     `DB_HOST=<usuario>.mysql.pythonanywhere-services.com`, `DB_NAME=<usuario>$spacewise`, `DB_USER=<usuario>`.
+     (Esa dirección solo funciona desde PythonAnywhere.)
+  2. Consola Bash: `git clone` del repositorio, `mkvirtualenv --python=python3.12 spacewise` y
+     `pip install -r requirements.txt` dentro de `spacewise-tienda`.
+  3. `.env` con lo de arriba más `DJANGO_HTTPS=1`, `DJANGO_HTTPS_REDIRIGIR=0`, `DJANGO_IP_CABECERA=X-Real-IP`
+     y `DJANGO_SERVIR_MEDIA=0`; luego `migrate`, `collectstatic` y `seed --clave-equipo ...`.
+  4. *Web* → *Add a new web app* → *Manual configuration* (misma versión de Python). Virtualenv: el creado.
+     En el archivo WSGI deja solo:
+     ```python
+     import os, sys
+     sys.path.insert(0, "/home/<usuario>/spacewace2.3/spacewise-tienda")
+     os.environ["DJANGO_SETTINGS_MODULE"] = "config.settings"
+     from django.core.wsgi import get_wsgi_application
+     application = get_wsgi_application()
+     ```
+  5. *Static files*: `/static/` → `/home/<usuario>/spacewace2.3/spacewise-tienda/staticfiles` y
+     `/media/` → `/home/<usuario>/spacewace2.3/spacewise-tienda/media`. Activa *Force HTTPS* y pulsa *Reload*.
+  6. Correos: las cuentas gratuitas solo pueden usar el SMTP de Gmail (con clave de aplicación).
+  No usa `gunicorn` ni el `Procfile`. Tras cada `git pull`: `migrate`, `collectstatic` y *Reload*.
 - **Render / Railway**: directorio raíz `spacewise-tienda`, comando de build `./build.sh`, comando de
   inicio el del `Procfile`; las variables del `.env` van en el panel del servicio. MySQL va aparte
   (Railway lo ofrece; en Render hay que usar un MySQL externo). **Ojo:** su disco se borra en cada
   despliegue, así que las fotos subidas desde el panel se pierden; para una demo basta con volver a subirlas.
 
-Antes de presentar: confirma en el hosting cuántos proxies hay delante (`DJANGO_PROXY_SALTOS`, casi
-siempre 1) y, si quieres que lleguen los correos de «¿Olvidaste tu contraseña?», configura `EMAIL_*`.
+Antes de presentar: en otros hostings confirma cuántos proxies hay delante (`DJANGO_PROXY_SALTOS`,
+casi siempre 1) y, si quieres que lleguen los correos de «¿Olvidaste tu contraseña?», configura `EMAIL_*`.
 
 ## Estructura
 

@@ -113,6 +113,10 @@ def _reporte_csv(datos):
 def ip_cliente(request):
     """IP del visitante. Detrás del proxy de un hosting, REMOTE_ADDR es el proxy y la IP real viene
     en X-Forwarded-For; se toma la que agregó el último proxy confiable (no la que pueda inventar el cliente)."""
+    if settings.IP_CABECERA:
+        valor = request.META.get("HTTP_" + settings.IP_CABECERA.upper().replace("-", "_"), "").strip()
+        if valor:
+            return valor
     saltos = settings.PROXY_SALTOS
     reenviadas = [ip.strip() for ip in request.META.get("HTTP_X_FORWARDED_FOR", "").split(",") if ip.strip()]
     if saltos and len(reenviadas) >= saltos:

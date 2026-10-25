@@ -161,6 +161,14 @@ class DespliegueTests(TestCase):
         self.assertEqual(self.ip("6.6.6.6, 203.0.113.7"), "203.0.113.7")
         self.assertEqual(self.ip(""), "10.0.0.1")
 
+    @override_settings(IP_CABECERA="X-Real-IP")
+    def test_cabecera_del_hosting(self):
+        from apps.core.views import ip_cliente
+
+        req = self.rf.get("/", REMOTE_ADDR="10.0.0.1", HTTP_X_REAL_IP="203.0.113.9", HTTP_X_FORWARDED_FOR="6.6.6.6")
+        self.assertEqual(ip_cliente(req), "203.0.113.9")
+        self.assertEqual(self.ip(), "10.0.0.1")  # sin la cabecera, la conexión
+
     def test_seed_en_produccion_exige_clave_del_equipo(self):
         from io import StringIO
 

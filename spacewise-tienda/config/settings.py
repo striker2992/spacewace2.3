@@ -33,15 +33,20 @@ HTTPS = os.environ.get("DJANGO_HTTPS", "0") == "1"
 if HTTPS:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    SECURE_SSL_REDIRECT = True
+    # Si el hosting ya fuerza HTTPS (p. ej. «Force HTTPS» en PythonAnywhere), pon DJANGO_HTTPS_REDIRIGIR=0
+    # para no depender de que el proxy avise a Django y evitar un bucle de redirecciones.
+    SECURE_SSL_REDIRECT = os.environ.get("DJANGO_HTTPS_REDIRIGIR", "1") == "1"
     # Los hostings atienden el HTTPS en un proxy y le pasan la petición a Django por HTTP.
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_HSTS_SECONDS = int(os.environ.get("DJANGO_HSTS_SEGUNDOS", "3600"))
 CSRF_TRUSTED_ORIGINS = [
     o.strip() for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()
 ] or [f"https://{h}" for h in ALLOWED_HOSTS if HTTPS and "*" not in h and h not in ("localhost", "127.0.0.1")]
-# Cantidad de proxies del hosting delante de Django: para conocer la IP real del visitante
-# (límite de intentos de inicio de sesión). 0 = conexión directa.
+# IP real del visitante detrás del proxy del hosting (límite de intentos de inicio de sesión):
+# - DJANGO_IP_CABECERA: cabecera que pone el hosting con esa IP (PythonAnywhere: X-Real-IP), o
+# - DJANGO_PROXY_SALTOS: cantidad de proxies que agregan su entrada a X-Forwarded-For.
+# Sin ninguna de las dos se usa la dirección de la conexión (correcto sin proxy).
+IP_CABECERA = os.environ.get("DJANGO_IP_CABECERA", "").strip()
 PROXY_SALTOS = int(os.environ.get("DJANGO_PROXY_SALTOS", "0"))
 
 INSTALLED_APPS = [

@@ -110,6 +110,16 @@ def _reporte_csv(datos):
     return resp
 
 
+def ip_cliente(request):
+    """IP del visitante. Detrás del proxy de un hosting, REMOTE_ADDR es el proxy y la IP real viene
+    en X-Forwarded-For; se toma la que agregó el último proxy confiable (no la que pueda inventar el cliente)."""
+    saltos = settings.PROXY_SALTOS
+    reenviadas = [ip.strip() for ip in request.META.get("HTTP_X_FORWARDED_FOR", "").split(",") if ip.strip()]
+    if saltos and len(reenviadas) >= saltos:
+        return reenviadas[-saltos]
+    return request.META.get("REMOTE_ADDR", "")
+
+
 class LoginView(auth_views.LoginView):
     """Login con destino según el rol: equipo interno -> dashboard; clientes -> catálogo.
 
@@ -123,7 +133,7 @@ class LoginView(auth_views.LoginView):
 
     # --- Límite de intentos fallidos (SEG-12) ---
     def _claves(self):
-        ip = self.request.META.get("REMOTE_ADDR", "")
+        ip = ip_cliente(self.request)
         usuario = self.request.POST.get("username", "").strip().lower()
         return (
             "login:cuenta:" + hashlib.sha256(f"{ip}|{usuario}".encode()).hexdigest(),
@@ -166,7 +176,7 @@ class OlvideClaveView(auth_views.PasswordResetView):
     success_url = reverse_lazy("clave_enviada")
 
     def form_valid(self, form):
-        clave = "reset:ip:" + hashlib.sha256(self.request.META.get("REMOTE_ADDR", "").encode()).hexdigest()
+        clave = "reset:ip:" + hashlib.sha256(ip_cliente(self.request).encode()).hexdigest()
         cache.add(clave, 0, timeout=3600)
         if cache.incr(clave) > 5:
             return redirect(self.success_url)  # misma respuesta, pero sin enviar más correos

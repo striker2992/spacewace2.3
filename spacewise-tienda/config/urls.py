@@ -1,14 +1,13 @@
 from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
-from django.urls import include, path
+from django.urls import include, path, re_path
+from django.views.generic import RedirectView
+from django.views.static import serve
 
 from apps.clientes.views import CambiarClaveView, PerfilView, RegistroView
 from apps.contenedores.views import CatalogoView, ContenedorDetalleView
 from apps.cotizaciones.views_tienda import cotizacion_publica
-from django.views.generic import RedirectView
-
 from apps.core.views import LoginView, OlvideClaveView, dashboard, inicio, reporte_mensual
 
 urlpatterns = [
@@ -49,5 +48,8 @@ urlpatterns = [
     path("", include("apps.operaciones.urls")),  # garantías (cliente y panel)
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+if settings.SERVIR_MEDIA:
+    # static() solo funciona con DEBUG; para la demo en producción se usa la vista serve directamente.
+    urlpatterns += [
+        re_path(r"^%s(?P<path>.*)$" % settings.MEDIA_URL.lstrip("/"), serve, {"document_root": settings.MEDIA_ROOT}),
+    ]

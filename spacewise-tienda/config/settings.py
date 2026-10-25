@@ -28,6 +28,22 @@ if not DEBUG and SECRET_KEY in (_CLAVE_DESARROLLO, "cambia-esta-clave"):
     raise ImproperlyConfigured("Con DJANGO_DEBUG=0 debes definir una DJANGO_SECRET_KEY propia en .env.")
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",") if h.strip()]
 
+# --- Despliegue con HTTPS (DJANGO_HTTPS=1 en el servidor) ---
+HTTPS = os.environ.get("DJANGO_HTTPS", "0") == "1"
+if HTTPS:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = True
+    # Los hostings atienden el HTTPS en un proxy y le pasan la petición a Django por HTTP.
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_HSTS_SECONDS = int(os.environ.get("DJANGO_HSTS_SEGUNDOS", "3600"))
+CSRF_TRUSTED_ORIGINS = [
+    o.strip() for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()
+] or [f"https://{h}" for h in ALLOWED_HOSTS if HTTPS and "*" not in h and h not in ("localhost", "127.0.0.1")]
+# Cantidad de proxies del hosting delante de Django: para conocer la IP real del visitante
+# (límite de intentos de inicio de sesión). 0 = conexión directa.
+PROXY_SALTOS = int(os.environ.get("DJANGO_PROXY_SALTOS", "0"))
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -45,6 +61,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # sirve CSS/JS en producción
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -103,10 +120,21 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = BASE_DIR / "staticfiles"  # python manage.py collectstatic
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    # En producción los archivos llevan una huella en el nombre para que el navegador no use versiones viejas.
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage" if DEBUG
+        else "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
-# Imágenes subidas (fotos de contenedores). En producción sírvelas con el servidor web.
+# Imágenes subidas (fotos de contenedores). Si el hosting no sirve /media/ por su cuenta
+# (PythonAnywhere sí puede), Django las sirve con DJANGO_SERVIR_MEDIA=1.
 MEDIA_URL = "media/"
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_ROOT = Path(os.environ.get("DJANGO_MEDIA_ROOT", BASE_DIR / "media"))
+SERVIR_MEDIA = DEBUG or os.environ.get("DJANGO_SERVIR_MEDIA", "1") == "1"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -139,3 +167,11 @@ LOGIN_MAX_INTENTOS_IP = 20
 LOGIN_BLOQUEO_MINUTOS = 15
 # Validez del enlace de «¿Olvidaste tu contraseña?».
 PASSWORD_RESET_TIMEOUT = 2 * 3600
+
+# Errores del servidor a la consola: en producción quedan en los logs del hosting.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "loggers": {"django": {"handlers": ["console"], "level": os.environ.get("DJANGO_LOG_LEVEL", "WARNING")}},
+}

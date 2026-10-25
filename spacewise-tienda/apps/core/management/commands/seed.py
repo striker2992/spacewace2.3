@@ -1,7 +1,8 @@
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
 from apps.clientes.models import Cliente
@@ -13,12 +14,24 @@ User = get_user_model()
 
 
 class Command(BaseCommand):
-    help = "Carga datos de demostración (solo para desarrollo)."
+    help = "Carga datos de demostración. En producción exige --clave-equipo para admin y vendedores."
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--clave-equipo",
+            help="Contraseña para admin y vendedores (obligatoria con DJANGO_DEBUG=0: "
+                 "las de ejemplo están publicadas en el README).",
+        )
 
     def handle(self, *args, **options):
+        clave_equipo = options.get("clave_equipo")
+        if not clave_equipo:
+            if not settings.DEBUG:
+                raise CommandError("En producción usa: python manage.py seed --clave-equipo <una-clave-segura>")
+            clave_equipo = None
         if not User.objects.filter(username="admin").exists():
-            User.objects.create_superuser("admin", "admin@example.com", "admin1234")
-            self.stdout.write("Usuario admin / admin1234 creado (cámbialo).")
+            User.objects.create_superuser("admin", "admin@example.com", clave_equipo or "admin1234")
+            self.stdout.write(f"Usuario admin / {'(tu clave)' if clave_equipo else 'admin1234'} creado.")
 
         vendedores = []
         for username, nombre in [("ana", "Ana Pérez"), ("luis", "Luis Soto"), ("marta", "Marta Rojas")]:
@@ -27,7 +40,7 @@ class Command(BaseCommand):
                 defaults={"first_name": nombre.split()[0], "last_name": nombre.split()[1]},
             )
             if creado:
-                user.set_password("demo1234")
+                user.set_password(clave_equipo or "demo1234")
                 user.save()
             
             vendedor, _ = Vendedor.objects.get_or_create(

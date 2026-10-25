@@ -17,7 +17,8 @@ NO_SEGUIR = ("/accounts/logout/", "/admin/", "/static/", "/media/")
 class EnlacesRotosTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        call_command("seed", stdout=StringIO())
+        # Los tests corren con DEBUG=False: seed exige la clave del equipo como en producción.
+        call_command("seed", clave_equipo="admin1234", stdout=StringIO())
 
     def recorrer(self, inicio, limite=400):
         vistos, pendientes, rotos = set(), deque(inicio), []

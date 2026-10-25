@@ -134,3 +134,43 @@ class ConfiguracionTests(TestCase):
     def test_pagina_404_propia(self):
         resp = self.client.get("/no-existe/")
         self.assertContains(resp, "No encontramos esta página", status_code=404)
+
+
+class DespliegueTests(TestCase):
+    """Detrás del proxy de un hosting, la IP del visitante se toma de X-Forwarded-For."""
+
+    def setUp(self):
+        from django.test import RequestFactory
+
+        self.rf = RequestFactory()
+
+    def ip(self, xff="", remota="10.0.0.1"):
+        from apps.core.views import ip_cliente
+
+        meta = {"REMOTE_ADDR": remota}
+        if xff:
+            meta["HTTP_X_FORWARDED_FOR"] = xff
+        return ip_cliente(self.rf.get("/", **meta))
+
+    def test_sin_proxy_usa_remote_addr_e_ignora_cabeceras_inventadas(self):
+        self.assertEqual(self.ip("1.2.3.4"), "10.0.0.1")
+
+    @override_settings(PROXY_SALTOS=1)
+    def test_con_un_proxy_usa_la_ip_que_agrego_el_proxy(self):
+        # El cliente puede inventar la primera; la última la agrega el proxy del hosting.
+        self.assertEqual(self.ip("6.6.6.6, 203.0.113.7"), "203.0.113.7")
+        self.assertEqual(self.ip(""), "10.0.0.1")
+
+    def test_seed_en_produccion_exige_clave_del_equipo(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+        from django.core.management.base import CommandError
+
+        with override_settings(DEBUG=False):
+            with self.assertRaises(CommandError):
+                call_command("seed", stdout=StringIO())
+            call_command("seed", clave_equipo="Equipo-Demo-2026", stdout=StringIO())
+        User = get_user_model()
+        self.assertTrue(User.objects.get(username="admin").check_password("Equipo-Demo-2026"))
+        self.assertTrue(User.objects.get(username="ana").check_password("Equipo-Demo-2026"))

@@ -107,12 +107,64 @@ python manage.py test --tag e2e
 - Nota: el bloqueo de intentos se guarda en la memoria del proceso. Con varios procesos en producción,
   configura un caché compartido (`CACHES`).
 
+## Despliegue (demo)
+
+El proyecto ya trae lo necesario para producción: WhiteNoise sirve el CSS/JS, `gunicorn` como
+servidor, HTTPS configurable y errores en los logs del hosting.
+
+### Pasos para cualquier hosting
+
+1. Crear la base MySQL (`utf8mb4`) y anotar host, nombre, usuario y clave.
+2. Subir el código (clonar el repositorio) e instalar: `pip install -r requirements.txt`.
+3. Crear el `.env` del servidor a partir de `.env.example` con, al menos:
+   ```
+   DJANGO_DEBUG=0
+   DJANGO_SECRET_KEY=<generada, ver abajo>
+   DJANGO_ALLOWED_HOSTS=<tu-dominio>
+   DJANGO_HTTPS=1
+   DJANGO_PROXY_SALTOS=1
+   DB_NAME=... DB_USER=... DB_PASSWORD=... DB_HOST=... DB_PORT=3306
+   ```
+   Clave secreta: `python -c "from django.core.management.utils import get_random_secret_key as k; print(k())"`
+4. Preparar:
+   ```bash
+   python manage.py migrate
+   python manage.py collectstatic --noinput
+   python manage.py seed --clave-equipo "<clave segura para admin y vendedores>"   # opcional: datos de demo
+   python manage.py check --deploy
+   ```
+   `check --deploy` puede avisar de `SECURE_HSTS_INCLUDE_SUBDOMAINS` y `SECURE_HSTS_PRELOAD`: se dejan
+   apagados a propósito (en dominios compartidos como `*.pythonanywhere.com` no corresponde activarlos).
+5. Arrancar: `gunicorn config.wsgi` (ya está en el `Procfile`) o el servidor WSGI del hosting.
+6. Probar: catálogo con estilos, fotos, iniciar sesión, una compra y el PDF.
+
+Con `DJANGO_DEBUG=0` el servidor no arranca si falta una `DJANGO_SECRET_KEY` propia, y `seed` no corre
+sin `--clave-equipo` (las claves de ejemplo están publicadas en este README). La cliente de demo
+`camila@ejemplo.cl / demo1234` sí se crea, para mostrar la tienda.
+
+### Según el hosting
+
+- **PythonAnywhere** (recomendado para la demo: incluye MySQL en el plan gratuito).
+  En *Databases* crea la base (el host es `<usuario>.mysql.pythonanywhere-services.com` y el nombre
+  `<usuario>$spacewise`). En *Web*: configuración manual con Python 3.x, en el archivo WSGI apunta a
+  `spacewise-tienda` y `config.wsgi`; agrega los *static files* `/static/` → `.../spacewise-tienda/staticfiles`
+  y `/media/` → `.../spacewise-tienda/media` (y entonces `DJANGO_SERVIR_MEDIA=0`); activa *Force HTTPS*.
+  No usa `gunicorn` ni el `Procfile`.
+- **Render / Railway**: directorio raíz `spacewise-tienda`, comando de build `./build.sh`, comando de
+  inicio el del `Procfile`; las variables del `.env` van en el panel del servicio. MySQL va aparte
+  (Railway lo ofrece; en Render hay que usar un MySQL externo). **Ojo:** su disco se borra en cada
+  despliegue, así que las fotos subidas desde el panel se pierden; para una demo basta con volver a subirlas.
+
+Antes de presentar: confirma en el hosting cuántos proxies hay delante (`DJANGO_PROXY_SALTOS`, casi
+siempre 1) y, si quieres que lleguen los correos de «¿Olvidaste tu contraseña?», configura `EMAIL_*`.
+
 ## Estructura
 
 ```
 spacewise-tienda/
 ├── manage.py
 ├── requirements.txt          # atajo a requirements/base.txt
+├── Procfile / build.sh       # despliegue (gunicorn, collectstatic, migrate)
 ├── requirements/
 │   └── base.txt              # dependencias (Django, Pillow, reportlab, mysqlclient)
 ├── .env.example              # plantilla de configuración local

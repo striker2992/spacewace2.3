@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, path
 
-from apps.clientes.views import RegistroView
+from apps.clientes.views import CambiarClaveView, PerfilView, RegistroView
 from apps.contenedores.views import CatalogoView, ContenedorDetalleView
 from apps.core.views import LoginView, dashboard, inicio
 
@@ -15,6 +15,8 @@ urlpatterns = [
     path("accounts/login/", LoginView.as_view(), name="login"),
     path("accounts/logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("accounts/registro/", RegistroView.as_view(), name="registro"),
+    path("accounts/perfil/", PerfilView.as_view(), name="perfil"),
+    path("accounts/perfil/clave/", CambiarClaveView.as_view(), name="cambiar_clave"),
     # Inicio: el equipo interno va al panel; el resto ve el catálogo
     path("", inicio, name="inicio"),
     path("catalogo/", CatalogoView.as_view(), name="catalogo"),

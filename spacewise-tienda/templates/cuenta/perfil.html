@@ -1,0 +1,26 @@
+{% extends "base_publico.html" %}
+{% block title %}Mi perfil · SpaceWise{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div><h1>Mi perfil</h1><p>{% if form.es_cliente %}Estos datos se usan en tus cotizaciones, compras y facturación.{% else %}Tus datos como parte del equipo SpaceWise.{% endif %}</p></div>
+  <div class="actions"><a class="btn" href="{% url 'cambiar_clave' %}">Cambiar contraseña</a></div>
+</div>
+
+<form method="post" class="card form-card" novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="alert-form">{{ form.non_field_errors }}</div>{% endif %}
+  <div class="two-cols">
+    {% for field in form %}
+    <div class="field{% if field.name == 'email' or field.name == 'direccion' %} full{% endif %}">
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+      {{ field.errors }}
+    </div>
+    {% endfor %}
+  </div>
+  <div class="actions">
+    <button class="btn btn-primary" type="submit">Guardar cambios</button>
+  </div>
+</form>
+{% endblock %}

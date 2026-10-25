@@ -153,3 +153,63 @@ class RegistroForm(ValidacionMixin, UserCreationForm):
             direccion=d.get("direccion", ""),
         )
         return user
+
+
+class PerfilForm(ValidacionMixin, forms.Form):
+    """UC-01: el usuario edita sus datos. Los clientes también su RUT, contacto y facturación."""
+
+    validaciones = {
+        "first_name": validar_nombre_persona, "last_name": validar_nombre_persona, "rut": validar_rut,
+        "telefono": validar_telefono, "razon_social": validar_texto, "direccion": validar_texto,
+    }
+    filtros = {"first_name": "letras", "last_name": "letras", "rut": "rut", "telefono": "telefono"}
+
+    first_name = forms.CharField(label="Nombre", max_length=150)
+    last_name = forms.CharField(label="Apellido", max_length=150)
+    email = forms.EmailField(label="Correo", max_length=150)
+    rut = forms.CharField(label="RUT", max_length=20)
+    telefono = forms.CharField(label="Teléfono", max_length=30)
+    razon_social = forms.CharField(label="Empresa / Razón social", max_length=150, required=False)
+    direccion = forms.CharField(label="Dirección de entrega", max_length=255, required=False)
+
+    CAMPOS_CLIENTE = ("rut", "telefono", "razon_social", "direccion")
+
+    def __init__(self, *args, user, es_cliente=True, **kwargs):
+        self.user, self.es_cliente = user, es_cliente
+        self.cliente = Cliente.objects.filter(usuario=user).first() if es_cliente else None
+        c = self.cliente
+        kwargs["initial"] = {
+            "first_name": user.first_name, "last_name": user.last_name, "email": user.email,
+            "rut": c.rut if c else "", "telefono": c.telefono if c else "",
+            "razon_social": c.razon_social if c else "", "direccion": c.direccion if c else "",
+            **kwargs.get("initial", {}),
+        }
+        super().__init__(*args, **kwargs)
+        if es_cliente:
+            self.fields["email"].help_text = "Lo usas para iniciar sesión."
+        else:
+            # El equipo interno entra con su nombre de usuario; el correo es opcional.
+            self.fields["email"].required = False
+            for campo in self.CAMPOS_CLIENTE:
+                del self.fields[campo]
+
+    def clean_email(self):
+        email = self.cleaned_data["email"]
+        return correo_disponible(email, excepto=self.user) if email else ""
+
+    @transaction.atomic
+    def save(self):
+        d, user = self.cleaned_data, self.user
+        # Si la cuenta usa el correo como usuario (clientes), se cambia junto con él.
+        if user.email and user.username.lower() == user.email.lower() and d["email"]:
+            user.username = d["email"]
+        user.first_name, user.last_name, user.email = d["first_name"], d["last_name"], d["email"]
+        user.save()
+        if self.es_cliente:
+            cliente = self.cliente or Cliente(usuario=user)
+            cliente.nombre = user.get_full_name()
+            cliente.email = user.email
+            for campo in self.CAMPOS_CLIENTE:
+                setattr(cliente, campo, d.get(campo, ""))
+            cliente.save()
+        return user

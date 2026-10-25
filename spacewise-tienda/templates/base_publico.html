@@ -38,7 +38,7 @@
       </a>
       {% endif %}
       {% if user.is_authenticated %}
-        <strong>{{ user.get_full_name|default:user.username }}</strong>
+        <a class="user-link{% if url == 'perfil' or url == 'cambiar_clave' %} active{% endif %}" href="{% url 'perfil' %}" title="Mi perfil"><strong>{{ user.get_full_name|default:user.username }}</strong><span class="user-short">Mi perfil</span></a>
         <form method="post" action="{% url 'logout' %}">
           {% csrf_token %}
           <button class="link-btn" type="submit">Salir</button>

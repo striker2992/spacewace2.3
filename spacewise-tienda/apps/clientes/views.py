@@ -1,4 +1,7 @@
+from django.contrib import messages
 from django.contrib.auth import login
+from django.contrib.auth import views as auth_views
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.generic import FormView
@@ -6,9 +9,9 @@ from django.db.models import Q
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
-from apps.core.mixins import BorrarMixin, FormularioMixin, PersonalRequeridoMixin, QueryStringMixin
+from apps.core.mixins import BorrarMixin, FormularioMixin, PersonalRequeridoMixin, QueryStringMixin, es_personal
 
-from .forms import ClienteForm, RegistroForm
+from .forms import ClienteForm, PerfilForm, RegistroForm
 from .models import Cliente
 
 
@@ -102,3 +105,32 @@ class RegistroView(FormView):
         # login() dispara user_logged_in -> se fusiona el carrito de la sesión con el del usuario.
         login(self.request, user, backend="django.contrib.auth.backends.ModelBackend")
         return redirect(self.get_siguiente())
+
+
+class PerfilView(LoginRequiredMixin, FormView):
+    """UC-01 Gestionar perfil: datos personales y, para clientes, contacto y facturación."""
+
+    template_name = "cuenta/perfil.html"
+    form_class = PerfilForm
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs.update(user=self.request.user, es_cliente=not es_personal(self.request.user))
+        return kwargs
+
+    def form_valid(self, form):
+        form.save()
+        messages.success(self.request, "Tus datos se actualizaron.")
+        return redirect("perfil")
+
+
+class CambiarClaveView(auth_views.PasswordChangeView):
+    """UC-01: cambio de contraseña (mantiene la sesión abierta)."""
+
+    template_name = "form.html"
+    success_url = reverse_lazy("perfil")
+    extra_context = {"titulo": "Cambiar contraseña", "cancel_url": reverse_lazy("perfil")}
+
+    def form_valid(self, form):
+        messages.success(self.request, "Tu contraseña se cambió.")
+        return super().form_valid(form)

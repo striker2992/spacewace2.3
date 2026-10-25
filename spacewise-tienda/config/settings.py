@@ -20,8 +20,8 @@ _cargar_dotenv(BASE_DIR / ".env")
 
 # DESARROLLO por defecto. En producción define DJANGO_SECRET_KEY, DJANGO_DEBUG=0 y DJANGO_ALLOWED_HOSTS.
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-insecure-key-cambiala-en-produccion")
-DEBUG = True
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", "*"]
+DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
+ALLOWED_HOSTS = [h.strip() for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",") if h.strip()]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -69,14 +69,15 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
+# Credenciales de MySQL en .env (DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT).
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": "spacewise_db",  # Nombre de la BD creada en el Paso 1
-        "USER": "root",  # Tu usuario de MySQL
-        "PASSWORD": "pato2005",  # Tu contraseña de MySQL
-        "HOST": "127.0.0.1",  # Servidor local
-        "PORT": "3306",  # Puerto por defecto de MySQL
+        "NAME": os.environ.get("DB_NAME", "spacewise_db"),
+        "USER": os.environ.get("DB_USER", "root"),
+        "PASSWORD": os.environ.get("DB_PASSWORD", ""),
+        "HOST": os.environ.get("DB_HOST", "127.0.0.1"),
+        "PORT": os.environ.get("DB_PORT", "3306"),
         "OPTIONS": {
             "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
         },

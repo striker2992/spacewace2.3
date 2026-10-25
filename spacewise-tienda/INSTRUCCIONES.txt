@@ -3,17 +3,20 @@ SPACEWISE - PUESTA EN MARCHA (PowerShell, desde esta carpeta)
 1) Crear entorno e instalar:
    python -m venv venv
    .\venv\Scripts\Activate.ps1
-   pip install -r requirements\base.txt
+   pip install -r requirements.txt
 
-2) Base de datos (borra y crea spacewise_db limpia):
+2) Configuración:
+   copy .env.example .env
+   (edita .env: DJANGO_SECRET_KEY y tus datos de MySQL en DB_USER / DB_PASSWORD)
+
+3) Base de datos (borra y crea spacewise_db limpia):
    mysql -u root -p -e "DROP DATABASE IF EXISTS spacewise_db; CREATE DATABASE spacewise_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-   (usuario/clave de MySQL: config\settings.py -> DATABASES)
 
-3) Migrar, sembrar y levantar:
+4) Migrar, sembrar y levantar:
    python manage.py migrate
    python manage.py seed
    python manage.py runserver
 
-4) Abrir http://127.0.0.1:8000/
+5) Abrir http://127.0.0.1:8000/
    admin / admin1234   (entra a /admin/)
    camila@ejemplo.cl / demo1234  (tienda, se entra con el correo)

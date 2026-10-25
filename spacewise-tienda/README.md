@@ -5,11 +5,17 @@ Plataforma Django para gestionar clientes, cotizaciones, compras y contenedores.
 
 ## Puesta en marcha
 
+Requiere **MySQL** instalado y en ejecución.
+
 ```bash
 python -m venv venv
 venv\Scripts\activate        # Windows  (en Linux/Mac: source venv/bin/activate)
-pip install -r requirements.txt      # incluye Pillow (fotos de contenedores)
+pip install -r requirements.txt      # incluye Pillow (fotos) y mysqlclient
 
+copy .env.example .env        # Linux/Mac: cp .env.example .env
+# edita .env: DJANGO_SECRET_KEY y tus datos de MySQL (DB_USER, DB_PASSWORD...)
+
+mysql -u root -p -e "CREATE DATABASE spacewise_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 python manage.py migrate
 python manage.py seed          # opcional: datos de demo + usuario admin / admin1234
 python manage.py runserver
@@ -19,19 +25,19 @@ Abre http://127.0.0.1:8000/catalogo/ (público). Equipo interno: http://127.0.0.
 Cliente de prueba para la tienda: `camila@ejemplo.cl` / `demo1234` (los clientes inician sesión con su correo).
 Sin `seed`, crea tu usuario con `python manage.py createsuperuser`.
 
-Por defecto usa **SQLite** (archivo `db.sqlite3`), así que no necesitas instalar nada más.
+## Configuración (`.env`)
 
-## Configuración (opcional)
+Toda la configuración local va en `.env` (plantilla: `.env.example`):
 
-Copia `.env.example` a `.env` y ajusta lo que necesites (clave secreta, DEBUG, hosts, base de datos).
+| Variable | Para qué |
+|---|---|
+| `DJANGO_SECRET_KEY` | Clave secreta de Django |
+| `DJANGO_DEBUG` | `1` en desarrollo, `0` en producción |
+| `DJANGO_ALLOWED_HOSTS` | Hosts permitidos, separados por coma |
+| `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT` | Conexión a MySQL |
+| `PEDIDOS_NOTIFY_EMAILS` | Correos que reciben aviso de pedidos nuevos |
+
 El archivo `.env` está en `.gitignore`: **nunca subas contraseñas al repositorio**.
-
-### Usar MySQL en vez de SQLite
-
-1. Crea la base: `CREATE DATABASE spacewise_db CHARACTER SET utf8mb4;`
-2. `pip install -r requirements/mysql.txt`
-3. En `.env`: `DB_ENGINE=mysql`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`
-4. `python manage.py migrate`
 
 ## Módulos
 
@@ -75,12 +81,11 @@ python manage.py test
 ## Estructura
 
 ```
-wiseee/
+spacewise-tienda/
 ├── manage.py
 ├── requirements.txt          # atajo a requirements/base.txt
 ├── requirements/
-│   ├── base.txt              # dependencias mínimas (Django)
-│   └── mysql.txt             # extra opcional para MySQL
+│   └── base.txt              # dependencias (Django, Pillow, reportlab, mysqlclient)
 ├── .env.example              # plantilla de configuración local
 ├── config/                   # settings, urls, wsgi
 ├── apps/                     # apps de Django (una por módulo)
@@ -92,5 +97,4 @@ wiseee/
 │   └── vendedores/
 ├── templates/                # base.html + una carpeta por módulo
 ├── static/                   # css/ y js/
-└── docs/legacy_spacewiseTest/  # esquema SQL original (solo referencia)
 ```

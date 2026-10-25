@@ -1,0 +1,26 @@
+{% load static ui %}<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{% endblock %} · SpaceWise</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+<div class="login">
+  <section class="login-hero">
+    <div class="login-logo">{% icon "box" %}</div>
+    <h1>Recupera tu acceso</h1>
+    <p>Te enviaremos un enlace a tu correo para que elijas una contraseña nueva.</p>
+  </section>
+  <section class="login-form">
+    <div class="login-box">
+      {% block box %}{% endblock %}
+      <p class="muted" style="text-align:center;font-size:12px;margin-top:22px"><a href="{% url 'login' %}">Volver a iniciar sesión</a></p>
+    </div>
+  </section>
+</div>
+<script src="{% static 'js/validacion.js' %}"></script>
+</body>
+</html>

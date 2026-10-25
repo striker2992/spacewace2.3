@@ -1,0 +1,13 @@
+{% extends "base_publico.html" %}
+{% block title %}Página no encontrada · SpaceWise{% endblock %}
+{% block content %}
+<section class="card" style="text-align:center;padding:48px 22px">
+  <p class="muted" style="margin:0 0 6px;font-size:13px">Error 404</p>
+  <h1 style="margin:0 0 10px;font-size:24px">No encontramos esta página</h1>
+  <p class="muted" style="margin:0 0 20px">Puede que el enlace esté mal escrito, haya vencido o que no tengas acceso a este contenido.</p>
+  <div class="actions" style="justify-content:center">
+    <a class="btn btn-primary" href="{% url 'inicio' %}">Ir al inicio</a>
+    <a class="btn" href="{% url 'catalogo' %}">Ver catálogo</a>
+  </div>
+</section>
+{% endblock %}

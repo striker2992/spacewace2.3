@@ -22,6 +22,20 @@ def correo_disponible(email, excepto=None):
     return email
 
 
+def sin_ficha_ajena(email):
+    """El correo no puede ser de una ficha cargada por el equipo que aún no tiene acceso a la tienda.
+
+    No se vincula sola: sin verificar el correo, cualquiera podría registrarse con el correo de una
+    empresa y ver sus cotizaciones y pedidos. El equipo le da acceso desde la ficha del cliente.
+    """
+    if email and Cliente.objects.filter(email__iexact=email, usuario__isnull=True).exists():
+        raise forms.ValidationError(
+            "Ya tenemos una ficha de cliente con este correo. Pide a tu ejecutivo de SpaceWise que "
+            "active tu acceso a la tienda; luego podrás entrar con este correo."
+        )
+    return email
+
+
 class ClienteForm(ValidacionMixin, forms.ModelForm):
     """Ficha del cliente para el equipo interno. Opcionalmente crea su acceso a la tienda
     (usuario = correo) o le asigna una contraseña nueva."""
@@ -135,7 +149,7 @@ class RegistroForm(ValidacionMixin, UserCreationForm):
     ]
 
     def clean_email(self):
-        return correo_disponible(self.cleaned_data["email"])
+        return sin_ficha_ajena(correo_disponible(self.cleaned_data["email"]))
 
     @transaction.atomic
     def save(self, commit=True):
@@ -195,7 +209,7 @@ class PerfilForm(ValidacionMixin, forms.Form):
 
     def clean_email(self):
         email = self.cleaned_data["email"]
-        return correo_disponible(email, excepto=self.user) if email else ""
+        return sin_ficha_ajena(correo_disponible(email, excepto=self.user)) if email else ""
 
     @transaction.atomic
     def save(self):

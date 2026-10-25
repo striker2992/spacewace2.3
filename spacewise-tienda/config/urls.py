@@ -7,10 +7,14 @@ from django.urls import include, path
 from apps.clientes.views import CambiarClaveView, PerfilView, RegistroView
 from apps.contenedores.views import CatalogoView, ContenedorDetalleView
 from apps.cotizaciones.views_tienda import cotizacion_publica
-from apps.core.views import LoginView, dashboard, inicio, reporte_mensual
+from django.views.generic import RedirectView
+
+from apps.core.views import LoginView, OlvideClaveView, dashboard, inicio, reporte_mensual
 
 urlpatterns = [
     # Django Admin: no se enlaza desde ninguna pantalla; queda solo para mantenimiento.
+    # Su login pasa por el nuestro, que tiene límite de intentos.
+    path("admin/login/", RedirectView.as_view(url="/accounts/login/?next=/admin/", query_string=False)),
     path("admin/", admin.site.urls),
     # Cuentas
     path("accounts/login/", LoginView.as_view(), name="login"),
@@ -18,6 +22,15 @@ urlpatterns = [
     path("accounts/registro/", RegistroView.as_view(), name="registro"),
     path("accounts/perfil/", PerfilView.as_view(), name="perfil"),
     path("accounts/perfil/clave/", CambiarClaveView.as_view(), name="cambiar_clave"),
+    # ¿Olvidaste tu contraseña?
+    path("accounts/clave/olvide/", OlvideClaveView.as_view(), name="olvide_clave"),
+    path("accounts/clave/enviada/", auth_views.PasswordResetDoneView.as_view(), name="clave_enviada"),
+    path(
+        "accounts/clave/restablecer/<uidb64>/<token>/",
+        auth_views.PasswordResetConfirmView.as_view(success_url="/accounts/clave/lista/"),
+        name="password_reset_confirm",
+    ),
+    path("accounts/clave/lista/", auth_views.PasswordResetCompleteView.as_view(), name="clave_lista"),
     # Inicio: el equipo interno va al panel; el resto ve el catálogo
     path("", inicio, name="inicio"),
     path("catalogo/", CatalogoView.as_view(), name="catalogo"),

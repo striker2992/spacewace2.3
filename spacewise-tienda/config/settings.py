@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -19,8 +21,11 @@ def _cargar_dotenv(ruta):
 _cargar_dotenv(BASE_DIR / ".env")
 
 # DESARROLLO por defecto. En producción define DJANGO_SECRET_KEY, DJANGO_DEBUG=0 y DJANGO_ALLOWED_HOSTS.
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-insecure-key-cambiala-en-produccion")
+_CLAVE_DESARROLLO = "dev-only-insecure-key-cambiala-en-produccion"
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", _CLAVE_DESARROLLO)
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
+if not DEBUG and SECRET_KEY in (_CLAVE_DESARROLLO, "cambia-esta-clave"):
+    raise ImproperlyConfigured("Con DJANGO_DEBUG=0 debes definir una DJANGO_SECRET_KEY propia en .env.")
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",") if h.strip()]
 
 INSTALLED_APPS = [
@@ -115,5 +120,22 @@ LOGOUT_REDIRECT_URL = "catalogo"
 # Correos del equipo interno que reciben aviso de cada pedido nuevo (separados por coma en .env).
 PEDIDOS_NOTIFY_EMAILS = [e.strip() for e in os.environ.get("PEDIDOS_NOTIFY_EMAILS", "").split(",") if e.strip()]
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "SpaceWise <no-responder@spacewise.cl>")
-# En desarrollo los correos se imprimen en la consola. En producción define EMAIL_BACKEND/EMAIL_HOST en .env.
+# En desarrollo los correos se imprimen en la consola. Para enviarlos de verdad define en .env
+# EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend y los EMAIL_HOST*.
 EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "localhost")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "1") == "1"
+
+# --- Seguridad de cuentas ---
+# La sesión se cierra tras estas horas sin actividad (cada visita renueva el plazo).
+SESSION_COOKIE_AGE = int(os.environ.get("DJANGO_SESSION_HORAS", "8")) * 3600
+SESSION_SAVE_EVERY_REQUEST = True
+# Intentos fallidos de inicio de sesión antes de bloquear temporalmente (por cuenta e IP, y por IP).
+LOGIN_MAX_INTENTOS = 5
+LOGIN_MAX_INTENTOS_IP = 20
+LOGIN_BLOQUEO_MINUTOS = 15
+# Validez del enlace de «¿Olvidaste tu contraseña?».
+PASSWORD_RESET_TIMEOUT = 2 * 3600

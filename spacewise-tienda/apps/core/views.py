@@ -1,6 +1,10 @@
 import csv
+import hashlib
 
+from django.conf import settings
 from django.contrib.auth import views as auth_views
+from django.core.cache import cache
+from django.urls import reverse_lazy
 from django.http import HttpResponse
 from django.shortcuts import redirect, render, resolve_url
 
@@ -116,3 +120,54 @@ class LoginView(auth_views.LoginView):
 
     def get_default_redirect_url(self):
         return resolve_url("dashboard" if es_personal(self.request.user) else "catalogo")
+
+    # --- Límite de intentos fallidos (SEG-12) ---
+    def _claves(self):
+        ip = self.request.META.get("REMOTE_ADDR", "")
+        usuario = self.request.POST.get("username", "").strip().lower()
+        return (
+            "login:cuenta:" + hashlib.sha256(f"{ip}|{usuario}".encode()).hexdigest(),
+            "login:ip:" + hashlib.sha256(ip.encode()).hexdigest(),
+        )
+
+    def _bloqueado(self):
+        cuenta, ip = self._claves()
+        return cache.get(cuenta, 0) >= settings.LOGIN_MAX_INTENTOS or cache.get(ip, 0) >= settings.LOGIN_MAX_INTENTOS_IP
+
+    def post(self, request, *args, **kwargs):
+        if self._bloqueado():
+            form = self.get_form()
+            form.errors.clear()  # no se intenta autenticar mientras dure el bloqueo
+            form.add_error(None, (
+                f"Demasiados intentos fallidos. Espera {settings.LOGIN_BLOQUEO_MINUTOS} minutos "
+                "o recupera tu contraseña con «¿Olvidaste tu contraseña?»."
+            ))
+            return self.render_to_response(self.get_context_data(form=form), status=429)
+        return super().post(request, *args, **kwargs)
+
+    def form_invalid(self, form):
+        for clave in self._claves():
+            cache.add(clave, 0, timeout=settings.LOGIN_BLOQUEO_MINUTOS * 60)
+            cache.incr(clave)
+        return super().form_invalid(form)
+
+    def form_valid(self, form):
+        cache.delete(self._claves()[0])
+        return super().form_valid(form)
+
+
+class OlvideClaveView(auth_views.PasswordResetView):
+    """Envía el enlace para elegir una contraseña nueva. Por privacidad, la respuesta es la misma
+    exista o no el correo. Máximo 5 solicitudes por hora desde la misma IP."""
+
+    template_name = "registration/password_reset_form.html"
+    email_template_name = "registration/password_reset_email.txt"
+    subject_template_name = "registration/password_reset_subject.txt"
+    success_url = reverse_lazy("clave_enviada")
+
+    def form_valid(self, form):
+        clave = "reset:ip:" + hashlib.sha256(self.request.META.get("REMOTE_ADDR", "").encode()).hexdigest()
+        cache.add(clave, 0, timeout=3600)
+        if cache.incr(clave) > 5:
+            return redirect(self.success_url)  # misma respuesta, pero sin enviar más correos
+        return super().form_valid(form)

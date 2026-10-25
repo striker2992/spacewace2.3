@@ -159,6 +159,8 @@ input:focus, select:focus, textarea:focus, .btn:focus-visible { outline: 2px sol
   .grid-2 { grid-template-columns: 1fr; }
   .login { grid-template-columns: 1fr; }
   .login-hero { min-height: 220px; }
+  .login-form { padding: 32px 16px; }
+  .login-box { width: min(360px, 100%); }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 

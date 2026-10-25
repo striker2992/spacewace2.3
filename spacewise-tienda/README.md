@@ -52,6 +52,7 @@ El archivo `.env` está en `.gitignore`: **nunca subas contraseñas al repositor
 | `/pedidos/<id>/garantia/` | Cliente: solicitar garantía de un pedido despachado o completado; `/garantias/` lista sus solicitudes y la resolución |
 | `/c/<código>/` | **Público.** Enlace único para ver el estado y detalle de una cotización sin iniciar sesión (sin datos personales ni PDF). El cliente y el equipo lo copian o lo regeneran desde el detalle |
 | `/accounts/registro/` | Crear cuenta de cliente (User + perfil con RUT, teléfono, empresa, dirección) |
+| `/accounts/clave/olvide/` | Recuperar la contraseña con un enlace por correo |
 | `/accounts/perfil/` | Mi perfil: editar datos de cuenta, contacto y facturación; `/accounts/perfil/clave/` cambia la contraseña |
 | `/panel/`        | Panel del equipo interno: totales, resumen de cotizaciones y últimos pedidos |
 | `/panel/contenedores/` | Agregar, editar y eliminar contenedores (precio, stock, foto, visibilidad) |
@@ -80,8 +81,31 @@ Al **aprobar** una cotización se crea automáticamente una compra pendiente por
 ## Pruebas
 
 ```bash
-python manage.py test
+python manage.py test                 # todas (las de navegador se saltan si no hay Playwright)
+python manage.py test --exclude-tag e2e   # solo las rápidas
 ```
+
+Pruebas en navegador real (responsive, doble clic al pagar, dos clientes y la última unidad, XSS,
+«Atrás» tras cerrar sesión). Son opcionales:
+
+```bash
+pip install playwright
+playwright install chromium
+python manage.py test --tag e2e
+```
+
+## Seguridad de las cuentas
+
+- Tras **5 intentos fallidos** de inicio de sesión (por cuenta e IP) o 20 desde una misma IP, se bloquea
+  por 15 minutos. El login de `/admin/` pasa por el mismo control.
+- **¿Olvidaste tu contraseña?** envía un enlace válido por 2 horas y de un solo uso. En desarrollo el
+  correo se muestra en la consola; para enviarlo de verdad configura `EMAIL_*` en `.env`.
+- La sesión se cierra tras **8 horas sin actividad** (`DJANGO_SESSION_HORAS`).
+- Con `DJANGO_DEBUG=0` el servidor no arranca si `DJANGO_SECRET_KEY` es la de ejemplo.
+- Si alguien se registra con el correo de una ficha creada por el equipo, se le pide contactar al
+  ejecutivo: el acceso se activa desde la ficha (así nadie toma una ficha ajena con solo saber el correo).
+- Nota: el bloqueo de intentos se guarda en la memoria del proceso. Con varios procesos en producción,
+  configura un caché compartido (`CACHES`).
 
 ## Estructura
 

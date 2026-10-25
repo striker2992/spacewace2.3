@@ -1,0 +1,26 @@
+{% extends "base_publico.html" %}
+{% block title %}Mis garantías · SpaceWise{% endblock %}
+{% block content %}
+<div class="page-title"><div><h1>Mis garantías</h1><p>Solicitudes de garantía de tus pedidos y su resolución. Para pedir una nueva, entra al pedido en <a href="{% url 'tienda:mis_pedidos' %}">Mis pedidos</a>.</p></div></div>
+<section class="card">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>N.º</th><th>PEDIDO</th><th>FECHA</th><th>ESTADO</th><th></th></tr></thead>
+      <tbody>
+      {% for g in garantias %}
+        <tr>
+          <td><a href="{% url 'garantias:mi_garantia' g.pk %}"><b>{{ g.numero }}</b></a></td>
+          <td>{{ g.pedido.numero_pedido }}</td>
+          <td>{{ g.fecha_solicitud|date:"d/m/Y" }}</td>
+          <td><span class="badge {{ g.badge }}">{{ g.get_estado_display }}</span></td>
+          <td class="num"><a class="btn btn-sm" href="{% url 'garantias:mi_garantia' g.pk %}">Ver detalle</a></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5" class="empty">No tienes solicitudes de garantía.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "_pagination.html" %}
+</section>
+{% endblock %}

@@ -1,0 +1,21 @@
+<section class="card">
+  <h2>Contenedores afectados</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>CONTENEDOR</th><th class="num">CANTIDAD</th></tr></thead>
+      <tbody>
+      {% for i in garantia.items.all %}
+        <tr><td>{{ i.contenedor.nombre }} <small class="muted">· {{ i.contenedor.get_tipo_display }}</small></td><td class="num">{{ i.cantidad }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p style="margin:16px 0 0"><b>Motivo:</b> {{ garantia.motivo|linebreaksbr }}</p>
+</section>
+{% if garantia.estado != "pendiente" %}
+<section class="card" style="background:var(--{% if garantia.estado == 'aprobada' %}ok{% else %}bad{% endif %}-bg);border-color:transparent">
+  <h2>Resolución · {{ garantia.get_estado_display }}</h2>
+  <p style="margin:0 0 8px">{{ garantia.resolucion|linebreaksbr }}</p>
+  <p class="muted" style="margin:0">{{ garantia.fecha_resolucion|date:"d/m/Y H:i" }}{% if mostrar_ejecutivo and garantia.resuelta_por %} · {{ garantia.resuelta_por.get_full_name|default:garantia.resuelta_por.username }}{% endif %}</p>
+</section>
+{% endif %}

@@ -1,0 +1,10 @@
+{% with garantias=pedido.garantias.all %}
+{% if garantias %}
+<section class="card">
+  <h2>Garantías</h2>
+  {% for g in garantias %}
+  <a class="recent" href="{% url url_garantia g.pk %}"><span><b>{{ g.numero }}</b><small>{{ g.fecha_solicitud|date:"d/m/Y" }} · {{ g.motivo|truncatechars:60 }}</small></span><span class="badge {{ g.badge }}">{{ g.get_estado_display }}</span></a>
+  {% endfor %}
+</section>
+{% endif %}
+{% endwith %}

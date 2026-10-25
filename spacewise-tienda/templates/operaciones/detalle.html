@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ garantia.numero }} · SpaceWise{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="{% url 'garantias:lista' %}">Garantías</a> &rsaquo; {{ garantia.numero }}</div>
+<div class="page-title">
+  <div>
+    <h1>{{ garantia.numero }} <span class="badge {{ garantia.badge }}" style="vertical-align:middle">{{ garantia.get_estado_display }}</span></h1>
+    <p>{{ garantia.fecha_solicitud|date:"d/m/Y H:i" }} · <a href="{{ garantia.pedido.cliente.get_absolute_url }}">{{ garantia.pedido.cliente.nombre }}</a> · pedido <a href="{% url 'vendedores:detalle_pedido' garantia.pedido.pk %}">{{ garantia.pedido.numero_pedido }}</a> ({{ garantia.pedido.fecha_creacion|date:"d/m/Y" }})</p>
+  </div>
+</div>
+
+{% include "operaciones/_detalle_garantia.html" with mostrar_ejecutivo=True %}
+
+{% if garantia.estado == "pendiente" %}
+<form method="post" action="{% url 'garantias:resolver' garantia.pk %}" class="card form-card" novalidate>
+  {% csrf_token %}
+  <h2>Registrar resolución</h2>
+  <div class="field">
+    <label>{{ form.estado.label }}</label>
+    <div class="actions">{% for r in form.estado %}<label class="check-field">{{ r.tag }} {{ r.choice_label }}</label>{% endfor %}</div>
+    {{ form.estado.errors }}
+  </div>
+  <div class="field">
+    <label for="{{ form.resolucion.id_for_label }}">{{ form.resolucion.label }}</label>
+    {{ form.resolucion }}
+    <div class="help">El cliente verá este texto en «Mis garantías».</div>
+    {{ form.resolucion.errors }}
+  </div>
+  <div class="actions"><button class="btn btn-primary" type="submit">Guardar resolución</button></div>
+</form>
+{% endif %}
+{% endblock %}

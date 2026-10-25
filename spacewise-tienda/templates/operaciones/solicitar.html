@@ -1,0 +1,35 @@
+{% extends "base_publico.html" %}
+{% block title %}Solicitar garantía · SpaceWise{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="{% url 'tienda:mis_pedidos' %}">Mis pedidos</a> &rsaquo; <a href="{{ pedido.get_absolute_url }}">{{ pedido.numero_pedido }}</a> &rsaquo; Solicitar garantía</div>
+<div class="page-title"><div><h1>Solicitar garantía</h1><p>Cuéntanos qué problema presenta tu pedido {{ pedido.numero_pedido }}. Nuestro equipo lo revisará y te responderá aquí.</p></div></div>
+
+<form method="post" class="card form-card" novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="alert-form">{{ form.non_field_errors }}</div>{% endif %}
+  <h2>Contenedores afectados</h2>
+  <div class="table-wrap" style="margin-bottom:18px">
+    <table>
+      <thead><tr><th>CONTENEDOR</th><th class="num">COMPRADOS</th><th class="num">AFECTADOS</th></tr></thead>
+      <tbody>
+      {% for item, campo in form.campos_cantidad %}
+        <tr>
+          <td><label for="{{ campo.id_for_label }}">{{ item.contenedor.nombre }}</label> <small class="muted">· {{ item.contenedor.get_tipo_display }}</small></td>
+          <td class="num">{{ item.cantidad }}</td>
+          <td class="num" style="width:120px">{{ campo }}{{ campo.errors }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="field">
+    <label for="{{ form.motivo.id_for_label }}">{{ form.motivo.label }}</label>
+    {{ form.motivo }}
+    {{ form.motivo.errors }}
+  </div>
+  <div class="actions">
+    <button class="btn btn-primary" type="submit">Enviar solicitud</button>
+    <a class="btn" href="{{ pedido.get_absolute_url }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

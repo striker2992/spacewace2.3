@@ -243,6 +243,19 @@ class Pedido(models.Model):
         ]
 
     @property
+    def motivo_sin_garantia(self):
+        """RQ12: por qué no se puede pedir garantía ahora ("" si se puede)."""
+        if self.estado not in (self.Estado.DESPACHADO, self.Estado.COMPLETADO):
+            return "Podrás solicitar garantía cuando el pedido haya sido despachado."
+        if self.garantias.filter(estado="pendiente").exists():
+            return "Ya tienes una solicitud de garantía en revisión para este pedido."
+        return ""
+
+    @property
+    def admite_garantia(self):
+        return not self.motivo_sin_garantia
+
+    @property
     def estados_siguientes(self):
         return [(e.value, e.label) for e in self.TRANSICIONES[self.Estado(self.estado)]]
 

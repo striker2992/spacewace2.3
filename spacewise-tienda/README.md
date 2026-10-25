@@ -49,12 +49,15 @@ El archivo `.env` está en `.gitignore`: **nunca subas contraseñas al repositor
 | `/carrito/checkout/` | Requiere login. Confirma entrega/contacto y crea el pedido |
 | `/pedidos/`      | Historial de pedidos del cliente |
 | `/cotizaciones/` | Cliente: historial de sus cotizaciones con su estado; `/cotizaciones/solicitar/` para pedir una nueva. Descarga el PDF y la **compra** (`/cotizaciones/<id>/comprar/`) con los precios valorizados cuando está aprobada |
+| `/pedidos/<id>/garantia/` | Cliente: solicitar garantía de un pedido despachado o completado; `/garantias/` lista sus solicitudes y la resolución |
 | `/accounts/registro/` | Crear cuenta de cliente (User + perfil con RUT, teléfono, empresa, dirección) |
+| `/accounts/perfil/` | Mi perfil: editar datos de cuenta, contacto y facturación; `/accounts/perfil/clave/` cambia la contraseña |
 | `/panel/`        | Panel del equipo interno: totales, resumen de cotizaciones y últimos pedidos |
 | `/panel/contenedores/` | Agregar, editar y eliminar contenedores (precio, stock, foto, visibilidad) |
 | `/panel/contenedores/servicios/` | Servicios adicionales (transporte, instalación, etc.) que se muestran en el catálogo y se agregan a las cotizaciones |
 | `/panel/pedidos/` | Revisar pedidos web y cambiar su estado |
 | `/panel/cotizaciones/` | Bandeja: solicitudes de clientes por valorizar y cotizaciones en curso; aprobar/rechazar y descargar el PDF formal |
+| `/panel/garantias/` | Bandeja de garantías: revisar solicitudes y registrar la resolución (aprobada/rechazada) |
 | `/panel/clientes/` | CRUD de clientes con su actividad |
 | `/admin/`        | Django Admin: no se enlaza desde la app, solo para mantenimiento |
 
@@ -93,7 +96,7 @@ spacewise-tienda/
 │   ├── clientes/
 │   ├── contenedores/         # administración + catálogo
 │   ├── cotizaciones/
-│   ├── operaciones/          # compras, ventas y devoluciones
+│   ├── operaciones/          # postventa: garantías de los pedidos
 │   └── vendedores/
 ├── templates/                # base.html + una carpeta por módulo
 ├── static/                   # css/ y js/

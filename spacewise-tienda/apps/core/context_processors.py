@@ -5,7 +5,8 @@ def tienda(request):
     """Datos globales para las plantillas: cantidad en el carrito y pedidos por atender."""
     user = request.user
     personal = es_personal(user)
-    ctx = {"es_personal": personal, "carrito_cantidad": 0, "pedidos_pendientes": 0, "solicitudes_nuevas": 0}
+    ctx = {"es_personal": personal, "carrito_cantidad": 0, "pedidos_pendientes": 0, "solicitudes_nuevas": 0,
+           "garantias_pendientes": 0}
 
     # Import diferido: evita ciclos al arrancar Django.
     from apps.cotizaciones.carrito import obtener_carrito
@@ -17,4 +18,7 @@ def tienda(request):
     if personal:
         ctx["pedidos_pendientes"] = Pedido.objects.filter(estado=Pedido.Estado.PENDIENTE).count()
         ctx["solicitudes_nuevas"] = Cotizacion.objects.filter(estado=Cotizacion.Estado.SOLICITADA).count()
+        from apps.operaciones.models import Garantia
+
+        ctx["garantias_pendientes"] = Garantia.objects.filter(estado=Garantia.Estado.PENDIENTE).count()
     return ctx

@@ -1,0 +1,15 @@
+{% extends "base_publico.html" %}
+{% block title %}Garantía {{ garantia.numero }} · SpaceWise{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="{% url 'garantias:mis_garantias' %}">Mis garantías</a> &rsaquo; {{ garantia.numero }}</div>
+<div class="page-title">
+  <div>
+    <h1>{{ garantia.numero }} <span class="badge {{ garantia.badge }}" style="vertical-align:middle">{{ garantia.get_estado_display }}</span></h1>
+    <p>Solicitada el {{ garantia.fecha_solicitud|date:"d/m/Y H:i" }} · pedido <a href="{{ garantia.pedido.get_absolute_url }}">{{ garantia.pedido.numero_pedido }}</a></p>
+  </div>
+</div>
+{% if garantia.estado == "pendiente" %}
+<section class="card"><p class="muted" style="margin:0;text-align:center">Recibimos tu solicitud. Nuestro equipo la está revisando y verás la resolución aquí.</p></section>
+{% endif %}
+{% include "operaciones/_detalle_garantia.html" %}
+{% endblock %}

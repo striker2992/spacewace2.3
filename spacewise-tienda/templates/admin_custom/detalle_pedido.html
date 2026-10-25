@@ -43,4 +43,5 @@
     {% if pedido.notas %}<p style="margin:0"><b>Notas del cliente:</b> {{ pedido.notas }}</p>{% endif %}
   </section>
 </div>
+{% include "operaciones/_garantias_pedido.html" with url_garantia="garantias:detalle" %}
 {% endblock %}

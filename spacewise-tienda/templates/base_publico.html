@@ -20,6 +20,7 @@
       <a href="{% url 'contenedores:servicio_lista' %}" class="{% if ns == 'contenedores' and 'servicio' in url %}active{% endif %}">Servicios</a>
       <a href="{% url 'vendedores:pedidos' %}" class="{% if ns == 'vendedores' %}active{% endif %}">Pedidos{% if pedidos_pendientes %} <span class="nav-badge" title="Pedidos pendientes">{{ pedidos_pendientes }}</span>{% endif %}</a>
       <a href="{% url 'cotizaciones:lista' %}" class="{% if ns == 'cotizaciones' %}active{% endif %}">Cotizaciones{% if solicitudes_nuevas %} <span class="nav-badge" title="Solicitudes por valorizar">{{ solicitudes_nuevas }}</span>{% endif %}</a>
+      <a href="{% url 'garantias:lista' %}" class="{% if ns == 'garantias' %}active{% endif %}">Garantías{% if garantias_pendientes %} <span class="nav-badge" title="Garantías por revisar">{{ garantias_pendientes }}</span>{% endif %}</a>
       <a href="{% url 'clientes:lista' %}" class="{% if ns == 'clientes' %}active{% endif %}">Clientes</a>
       <a href="{% url 'catalogo' %}" class="{% if url == 'catalogo' or url == 'detalle_contenedor' %}active{% endif %}">Catálogo</a>
       {% else %}
@@ -27,6 +28,7 @@
       {% if user.is_authenticated %}
       <a href="{% url 'tienda:mis_cotizaciones' %}" class="{% if 'cotizacion' in url %}active{% endif %}">Mis cotizaciones</a>
       <a href="{% url 'tienda:mis_pedidos' %}" class="{% if url == 'mis_pedidos' or url == 'detalle_pedido' %}active{% endif %}">Mis pedidos</a>
+      <a href="{% url 'garantias:mis_garantias' %}" class="{% if ns == 'garantias' %}active{% endif %}">Mis garantías</a>
       {% endif %}
       {% endif %}
     </nav>

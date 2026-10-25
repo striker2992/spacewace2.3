@@ -7,6 +7,9 @@
     <h1>{{ pedido.numero_pedido }} <span class="badge {{ pedido.badge }}" style="vertical-align:middle">{{ pedido.get_estado_display }}</span></h1>
     <p>Realizado el {{ pedido.fecha_creacion|date:"d/m/Y H:i" }}{% if pedido.cotizacion %} · desde la cotización <a href="{% url 'tienda:detalle_cotizacion' pedido.cotizacion.pk %}">{{ pedido.cotizacion.numero }}</a>{% endif %}</p>
   </div>
+  {% if pedido.admite_garantia %}
+  <div class="actions"><a class="btn" href="{% url 'garantias:solicitar' pedido.pk %}">Solicitar garantía</a></div>
+  {% endif %}
 </div>
 <section class="card">{% include "cliente/_flujo_pedido.html" %}</section>
 <section class="card">
@@ -19,4 +22,5 @@
   <p style="margin:0 0 6px"><b>Contacto:</b> {{ pedido.get_metodo_contacto_display }} · {{ pedido.telefono_contacto }}</p>
   {% if pedido.notas %}<p style="margin:0"><b>Notas:</b> {{ pedido.notas }}</p>{% endif %}
 </section>
+{% include "operaciones/_garantias_pedido.html" with url_garantia="garantias:mi_garantia" %}
 {% endblock %}

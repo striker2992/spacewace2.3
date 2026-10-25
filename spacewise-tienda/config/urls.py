@@ -29,6 +29,7 @@ urlpatterns = [
     path("panel/clientes/", include("apps.clientes.urls")),
     path("panel/cotizaciones/", include("apps.cotizaciones.urls")),
     path("panel/", include("apps.vendedores.urls")),  # /panel/pedidos/
+    path("", include("apps.operaciones.urls")),  # garantías (cliente y panel)
 ]
 
 if settings.DEBUG:

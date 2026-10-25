@@ -7,7 +7,7 @@ from django.db.models import F
 
 from apps.contenedores.models import Contenedor
 
-from .models import ItemPedido, Pedido
+from .models import Cotizacion, ItemPedido, Pedido, ServicioPedido
 
 
 class PedidoError(Exception):
@@ -24,39 +24,13 @@ def crear_pedido(carrito, cliente, datos):
     (otro cliente pudo comprar mientras tanto) y los precios se copian del catálogo.
     `datos`: direccion_entrega, telefono_contacto, metodo_contacto, notas.
     """
-    from apps.core.mixins import es_personal  # import diferido: evita ciclos
-
-    if cliente.usuario_id and es_personal(cliente.usuario):
-        raise PedidoError("Las cuentas del equipo interno no pueden realizar compras.")
+    _validar_comprador(cliente)
     with transaction.atomic():
         items = list(carrito.items.select_related("contenedor"))
         if not items:
             raise PedidoError("Tu carrito está vacío.")
-
-        bloqueados = {
-            c.pk: c
-            for c in Contenedor.objects.select_for_update().filter(
-                pk__in=[i.contenedor_id for i in items]
-            )
-        }
-        problemas = []
-        for item in items:
-            c = bloqueados[item.contenedor_id]
-            vendible = c.activo and c.estado == Contenedor.Estado.DISPONIBLE
-            if not vendible or c.stock < item.cantidad:
-                problemas.append(
-                    f"«{c.nombre}»: pediste {item.cantidad} y hay {c.stock if vendible else 0} disponible(s)."
-                )
-        if problemas:
-            raise PedidoError("Cambió la disponibilidad de algunos contenedores. " + " ".join(problemas))
-
-        pedido = Pedido.objects.create(
-            cliente=cliente,
-            direccion_entrega=datos["direccion_entrega"],
-            telefono_contacto=datos["telefono_contacto"],
-            metodo_contacto=datos["metodo_contacto"],
-            notas=datos.get("notas", ""),
-        )
+        bloqueados = _bloquear_stock(items)
+        pedido = _nuevo_pedido(cliente, datos)
         total = 0
         for item in items:
             c = bloqueados[item.contenedor_id]
@@ -71,6 +45,89 @@ def crear_pedido(carrito, cliente, datos):
 
     notificar_pedido_nuevo(pedido)
     return pedido
+
+
+def comprar_cotizacion(cotizacion, cliente, datos):
+    """RQ06: convierte una cotización aprobada en un Pedido con los precios valorizados.
+
+    A diferencia del carrito, los precios NO se toman del catálogo sino de la cotización
+    (lo que el ejecutivo aprobó). Una cotización se compra una sola vez; si su pedido se
+    cancela, se puede volver a comprar.
+    """
+    _validar_comprador(cliente)
+    with transaction.atomic():
+        # Se relee bloqueada para que un doble clic no genere dos pedidos.
+        cot = Cotizacion.objects.select_for_update().get(pk=cotizacion.pk)
+        if cot.cliente_id != cliente.pk:
+            raise PedidoError("Esta cotización no es tuya.")
+        if cot.estado != Cotizacion.Estado.APROBADA:
+            raise PedidoError("Solo se pueden comprar cotizaciones aprobadas.")
+        if cot.pedido_vigente:
+            raise PedidoError(f"Esta cotización ya se compró en el pedido {cot.pedido_vigente.numero_pedido}.")
+        items = list(cot.items.all())
+        servicios = list(cot.servicios.all())
+        if not items:
+            raise PedidoError("La cotización no tiene contenedores.")
+        bloqueados = _bloquear_stock(items)
+
+        pedido = _nuevo_pedido(cliente, datos, cotizacion=cot)
+        for item in items:
+            ItemPedido.objects.create(
+                pedido=pedido, contenedor_id=item.contenedor_id, cantidad=item.cantidad,
+                precio_unitario=item.precio_unitario,
+            )
+            Contenedor.objects.filter(pk=bloqueados[item.contenedor_id].pk).update(
+                stock=F("stock") - item.cantidad
+            )
+        for s in servicios:
+            ServicioPedido.objects.create(
+                pedido=pedido, servicio_id=s.servicio_id, cantidad=s.cantidad, precio_unitario=s.precio_unitario
+            )
+        pedido.total = sum(i.subtotal for i in items) + sum(s.subtotal for s in servicios)
+        pedido.save(update_fields=["total"])
+
+    notificar_pedido_nuevo(pedido)
+    return pedido
+
+
+def _validar_comprador(cliente):
+    from apps.core.mixins import es_personal  # import diferido: evita ciclos
+
+    if cliente.usuario_id and es_personal(cliente.usuario):
+        raise PedidoError("Las cuentas del equipo interno no pueden realizar compras.")
+
+
+def _bloquear_stock(lineas):
+    """Bloquea los contenedores de `lineas` (con contenedor_id y cantidad) y revalida su stock.
+
+    Otro cliente pudo comprar mientras tanto, así que se revisa dentro de la transacción.
+    """
+    bloqueados = {
+        c.pk: c
+        for c in Contenedor.objects.select_for_update().filter(pk__in=[l.contenedor_id for l in lineas])
+    }
+    problemas = []
+    for linea in lineas:
+        c = bloqueados[linea.contenedor_id]
+        vendible = c.activo and c.estado == Contenedor.Estado.DISPONIBLE
+        if not vendible or c.stock < linea.cantidad:
+            problemas.append(
+                f"«{c.nombre}»: pediste {linea.cantidad} y hay {c.stock if vendible else 0} disponible(s)."
+            )
+    if problemas:
+        raise PedidoError("Cambió la disponibilidad de algunos contenedores. " + " ".join(problemas))
+    return bloqueados
+
+
+def _nuevo_pedido(cliente, datos, cotizacion=None):
+    return Pedido.objects.create(
+        cliente=cliente,
+        cotizacion=cotizacion,
+        direccion_entrega=datos["direccion_entrega"],
+        telefono_contacto=datos["telefono_contacto"],
+        metodo_contacto=datos["metodo_contacto"],
+        notas=datos.get("notas", ""),
+    )
 
 
 # ---------------------------------------------------------------------------

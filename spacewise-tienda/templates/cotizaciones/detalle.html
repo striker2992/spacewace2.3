@@ -9,6 +9,10 @@
     <p>{{ cotizacion.fecha|date:"d/m/Y" }} · <a href="{{ cotizacion.cliente.get_absolute_url }}">{{ cotizacion.cliente.nombre }}</a>{% if cotizacion.vendedor %} · {{ cotizacion.vendedor.user.get_full_name|default:cotizacion.vendedor.user.username }}{% endif %}</p>
   </div>
   <div class="actions">
+    {% with pedido=cotizacion.pedido_vigente %}
+    {% if pedido %}
+    <a class="btn btn-primary" href="{% url 'vendedores:detalle_pedido' pedido.pk %}">Comprada · {{ pedido.numero_pedido }}</a>
+    {% else %}
     {% if cotizacion.estado == "solicitada" %}
     <a class="btn" href="{% url 'cotizaciones:editar' cotizacion.pk %}">Ajustar precios</a>
     <form class="inline" method="post" action="{% url 'cotizaciones:estado' cotizacion.pk %}">{% csrf_token %}<input type="hidden" name="estado" value="pendiente"><button class="btn btn-primary" type="submit">{% icon "check" %} Enviar valorización</button></form>
@@ -20,6 +24,8 @@
     <form class="inline" method="post" action="{% url 'cotizaciones:estado' cotizacion.pk %}">{% csrf_token %}<input type="hidden" name="estado" value="rechazada"><button class="btn btn-danger" type="submit">{% icon "x" %} Rechazar</button></form>
     {% endif %}
     {% if cotizacion.estado != "solicitada" %}<a class="btn" href="{% url 'cotizaciones:editar' cotizacion.pk %}">Editar</a>{% endif %}
+    {% endif %}
+    {% endwith %}
     <a class="btn" href="{% url 'cotizaciones:pdf' cotizacion.pk %}" target="_blank" rel="noopener">{% icon "file-text" %} Ver PDF</a>
     <a class="btn" href="{% url 'cotizaciones:pdf' cotizacion.pk %}?descargar=1">Descargar PDF</a>
     <a class="btn btn-danger" href="{% url 'cotizaciones:eliminar' cotizacion.pk %}" aria-label="Eliminar">{% icon "trash" %}</a>

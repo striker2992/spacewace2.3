@@ -53,7 +53,7 @@ class PedidoDetalle(PersonalRequeridoMixin, DetailView):
     context_object_name = "pedido"
 
     def get_queryset(self):
-        return Pedido.objects.select_related("cliente__usuario").prefetch_related("items__contenedor")
+        return Pedido.objects.select_related("cliente__usuario").prefetch_related("items__contenedor", "servicios__servicio")
 
 
 @personal_requerido

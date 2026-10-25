@@ -2,7 +2,7 @@
 {% load ui %}
 {% block title %}Confirmar compra · SpaceWise{% endblock %}
 {% block content %}
-<div class="page-title"><div><h1>Confirmar compra</h1><p>Revisa los datos de entrega y contacto.</p></div></div>
+<div class="page-title"><div><h1>Confirmar compra</h1><p>{% if cotizacion %}Compra de la cotización {{ cotizacion.numero }} con los precios aprobados. {% endif %}Revisa los datos de entrega y contacto.</p></div></div>
 
 <div class="checkout-grid">
   <form method="post" class="card" novalidate>
@@ -20,7 +20,11 @@
     </div>
     <div class="actions">
       <button class="btn btn-primary" type="submit">Confirmar pedido</button>
+      {% if cotizacion %}
+      <a class="btn" href="{% url 'tienda:detalle_cotizacion' cotizacion.pk %}">Volver a la cotización</a>
+      {% else %}
       <a class="btn" href="{% url 'tienda:carrito' %}">Volver al carrito</a>
+      {% endif %}
     </div>
   </form>
 
@@ -28,6 +32,9 @@
     <h2>Tu pedido</h2>
     {% for i in items %}
     <div class="line"><span>{{ i.cantidad }} × {{ i.contenedor.nombre }}</span><span>${{ i.subtotal|floatformat:"0g" }}</span></div>
+    {% endfor %}
+    {% for s in servicios %}
+    <div class="line"><span>{{ s.cantidad }} × {{ s.servicio.nombre }}</span><span>${{ s.subtotal|floatformat:"0g" }}</span></div>
     {% endfor %}
     <div class="line total"><span>Total</span><span>${{ total|floatformat:"0g" }}</span></div>
   </aside>

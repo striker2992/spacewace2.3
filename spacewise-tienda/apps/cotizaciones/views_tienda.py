@@ -13,13 +13,13 @@ from django.views.generic import DetailView, FormView, ListView, TemplateView
 
 from apps.clientes.models import Cliente
 from apps.contenedores.models import Contenedor
-from apps.core.mixins import SoloClientesMixin, solo_clientes
+from apps.core.mixins import SoloClientesMixin, es_personal, solo_clientes
 
 from .carrito import CANTIDAD_MAXIMA, CarritoError, actualizar_item, agregar_item, obtener_carrito
 from .forms import CheckoutForm, SolicitudForm, SolicitudItemFormSet, SolicitudServicioFormSet
 from .models import Cotizacion, ItemCarrito, Pedido
 from .pdf import respuesta_pdf
-from .servicios import PedidoError, crear_pedido
+from .servicios import PedidoError, comprar_cotizacion, crear_pedido
 
 
 def _entero(valor, defecto=1):
@@ -114,18 +114,8 @@ class CheckoutView(SoloClientesMixin, LoginRequiredMixin, FormView):
                 return redirect("catalogo")
         return super().dispatch(request, *args, **kwargs)
 
-    def _cliente(self):
-        return Cliente.objects.filter(usuario=self.request.user).first()
-
     def get_initial(self):
-        user, cliente = self.request.user, self._cliente()
-        return {
-            "nombre": cliente.nombre if cliente else user.get_full_name(),
-            "rut": cliente.rut if cliente else "",
-            "razon_social": cliente.razon_social if cliente else "",
-            "direccion_entrega": cliente.direccion if cliente else "",
-            "telefono_contacto": cliente.telefono if cliente else "",
-        }
+        return _datos_iniciales_checkout(self.request.user)
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -135,21 +125,36 @@ class CheckoutView(SoloClientesMixin, LoginRequiredMixin, FormView):
         return ctx
 
     def form_valid(self, form):
-        d = form.cleaned_data
-        user = self.request.user
-        cliente = self._cliente() or Cliente(usuario=user, email=user.email)
-        cliente.nombre = d["nombre"]
-        cliente.rut = d["rut"]
-        cliente.razon_social = d["razon_social"]
-        cliente.telefono = d["telefono_contacto"]
-        cliente.direccion = d["direccion_entrega"]
-        cliente.save()
+        cliente = _guardar_cliente_checkout(self.request.user, form.cleaned_data)
         try:
-            pedido = crear_pedido(self.carrito, cliente, d)
+            pedido = crear_pedido(self.carrito, cliente, form.cleaned_data)
         except PedidoError as e:
             messages.error(self.request, str(e))
             return redirect("tienda:carrito")
         return redirect("tienda:confirmacion", pk=pedido.pk)
+
+
+def _datos_iniciales_checkout(user):
+    cliente = Cliente.objects.filter(usuario=user).first()
+    return {
+        "nombre": cliente.nombre if cliente else user.get_full_name(),
+        "rut": cliente.rut if cliente else "",
+        "razon_social": cliente.razon_social if cliente else "",
+        "direccion_entrega": cliente.direccion if cliente else "",
+        "telefono_contacto": cliente.telefono if cliente else "",
+    }
+
+
+def _guardar_cliente_checkout(user, d):
+    """Crea o actualiza el perfil del cliente con los datos confirmados en el checkout."""
+    cliente = Cliente.objects.filter(usuario=user).first() or Cliente(usuario=user, email=user.email)
+    cliente.nombre = d["nombre"]
+    cliente.rut = d["rut"]
+    cliente.razon_social = d["razon_social"]
+    cliente.telefono = d["telefono_contacto"]
+    cliente.direccion = d["direccion_entrega"]
+    cliente.save()
+    return cliente
 
 
 # ---------------------------------------------------------------------------
@@ -160,7 +165,7 @@ class _PedidosDelUsuario(LoginRequiredMixin):
         return (
             Pedido.objects.filter(cliente__usuario=self.request.user)
             .select_related("cliente")
-            .prefetch_related("items__contenedor")
+            .prefetch_related("items__contenedor", "servicios__servicio")
         )
 
 
@@ -263,3 +268,46 @@ def mi_cotizacion_pdf(request, pk):
         messages.info(request, "El PDF estará disponible cuando la cotización sea aprobada.")
         return redirect("tienda:detalle_cotizacion", pk=cot.pk)
     return respuesta_pdf(request, cot, reverse("tienda:detalle_cotizacion", args=[cot.pk]))
+
+
+class ComprarCotizacionView(SoloClientesMixin, LoginRequiredMixin, FormView):
+    """RQ06: el cliente compra su cotización aprobada con los precios valorizados."""
+
+    template_name = "cliente/checkout.html"
+    form_class = CheckoutForm
+
+    def dispatch(self, request, *args, **kwargs):
+        # El equipo interno lo maneja SoloClientesMixin (más abajo en la cadena).
+        if request.user.is_authenticated and not es_personal(request.user):
+            self.cotizacion = get_object_or_404(_cotizaciones_de(request.user), pk=kwargs["pk"])
+            detalle = redirect("tienda:detalle_cotizacion", pk=self.cotizacion.pk)
+            if self.cotizacion.estado != Cotizacion.Estado.APROBADA:
+                messages.info(request, "Podrás comprar esta cotización cuando sea aprobada.")
+                return detalle
+            if self.cotizacion.pedido_vigente:
+                messages.info(request, f"Ya compraste esta cotización ({self.cotizacion.pedido_vigente.numero_pedido}).")
+                return detalle
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_initial(self):
+        inicial = _datos_iniciales_checkout(self.request.user)
+        if self.cotizacion.direccion_entrega:
+            inicial["direccion_entrega"] = self.cotizacion.direccion_entrega
+        return inicial
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["cotizacion"] = self.cotizacion
+        ctx["items"] = self.cotizacion.items.all()
+        ctx["servicios"] = self.cotizacion.servicios.all()
+        ctx["total"] = self.cotizacion.total
+        return ctx
+
+    def form_valid(self, form):
+        cliente = _guardar_cliente_checkout(self.request.user, form.cleaned_data)
+        try:
+            pedido = comprar_cotizacion(self.cotizacion, cliente, form.cleaned_data)
+        except PedidoError as e:
+            messages.error(self.request, str(e))
+            return redirect("tienda:detalle_cotizacion", pk=self.cotizacion.pk)
+        return redirect("tienda:confirmacion", pk=pedido.pk)

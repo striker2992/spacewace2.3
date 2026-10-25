@@ -107,7 +107,11 @@ def cotizacion_crear(request):
 
 @personal_requerido
 def cotizacion_editar(request, pk):
-    return _guardar(request, get_object_or_404(Cotizacion, pk=pk))
+    cot = get_object_or_404(Cotizacion, pk=pk)
+    if cot.pedido_vigente:
+        messages.error(request, f"{cot.numero} ya se compró ({cot.pedido_vigente.numero_pedido}); no se puede editar.")
+        return redirect(cot)
+    return _guardar(request, cot)
 
 
 @personal_requerido
@@ -117,6 +121,9 @@ def cotizacion_estado(request, pk):
     nuevo = request.POST.get("estado")
     if nuevo not in Cotizacion.Estado.values:
         return HttpResponseBadRequest("Estado inválido")
+    if cot.pedido_vigente:
+        messages.error(request, f"{cot.numero} ya se compró ({cot.pedido_vigente.numero_pedido}); su estado no se puede cambiar.")
+        return redirect(cot)
 
     cot.estado = nuevo
     cot.save(update_fields=["estado"])

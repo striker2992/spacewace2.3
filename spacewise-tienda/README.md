@@ -48,7 +48,7 @@ El archivo `.env` está en `.gitignore`: **nunca subas contraseñas al repositor
 | `/carrito/`      | **Público.** Carrito en sesión; al iniciar sesión se fusiona con el del usuario |
 | `/carrito/checkout/` | Requiere login. Confirma entrega/contacto y crea el pedido |
 | `/pedidos/`      | Historial de pedidos del cliente |
-| `/cotizaciones/` | Cliente: historial de sus cotizaciones con su estado; `/cotizaciones/solicitar/` para pedir una nueva. Descarga el PDF cuando está aprobada |
+| `/cotizaciones/` | Cliente: historial de sus cotizaciones con su estado; `/cotizaciones/solicitar/` para pedir una nueva. Descarga el PDF y la **compra** (`/cotizaciones/<id>/comprar/`) con los precios valorizados cuando está aprobada |
 | `/accounts/registro/` | Crear cuenta de cliente (User + perfil con RUT, teléfono, empresa, dirección) |
 | `/panel/`        | Panel del equipo interno: totales, resumen de cotizaciones y últimos pedidos |
 | `/panel/contenedores/` | Agregar, editar y eliminar contenedores (precio, stock, foto, visibilidad) |

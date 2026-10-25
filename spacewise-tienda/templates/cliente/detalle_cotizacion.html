@@ -10,7 +10,14 @@
   </div>
   <div class="actions">
     {% if cotizacion.estado == "aprobada" %}
-    <a class="btn btn-primary" href="{% url 'tienda:pdf_cotizacion' cotizacion.pk %}" target="_blank" rel="noopener">{% icon "file-text" %} Ver PDF</a>
+    {% with pedido=cotizacion.pedido_vigente %}
+    {% if pedido %}
+    <a class="btn btn-primary" href="{% url 'tienda:detalle_pedido' pedido.pk %}">Ver pedido {{ pedido.numero_pedido }}</a>
+    {% else %}
+    <a class="btn btn-primary" href="{% url 'tienda:comprar_cotizacion' cotizacion.pk %}">{% icon "check" %} Comprar</a>
+    {% endif %}
+    {% endwith %}
+    <a class="btn" href="{% url 'tienda:pdf_cotizacion' cotizacion.pk %}" target="_blank" rel="noopener">{% icon "file-text" %} Ver PDF</a>
     <a class="btn" href="{% url 'tienda:pdf_cotizacion' cotizacion.pk %}?descargar=1">Descargar PDF</a>
     {% else %}
     <button class="btn" type="button" disabled title="Disponible cuando la cotización sea aprobada">{% icon "file-text" %} PDF disponible al aprobarse</button>
@@ -27,7 +34,7 @@
   <p class="muted" style="margin:16px 0 0;text-align:center">
     {% if cotizacion.estado == "solicitada" %}Recibimos tu solicitud. Nuestro equipo la está valorizando.
     {% elif cotizacion.estado == "pendiente" %}Tu cotización ya tiene valores y está en revisión para su aprobación.
-    {% elif cotizacion.estado == "aprobada" %}¡Tu cotización fue aprobada! Te contactaremos para coordinar.
+    {% elif cotizacion.estado == "aprobada" %}{% if cotizacion.pedido_vigente %}Compraste esta cotización. Revisa el avance en tu pedido.{% else %}¡Tu cotización fue aprobada! Ya puedes comprarla con los precios valorizados.{% endif %}
     {% else %}Esta cotización fue rechazada. Puedes solicitar una nueva cuando quieras.{% endif %}
   </p>
 </section>

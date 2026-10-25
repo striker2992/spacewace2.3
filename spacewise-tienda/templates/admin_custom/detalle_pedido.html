@@ -6,7 +6,7 @@
 <div class="page-title">
   <div>
     <h1>{{ pedido.numero_pedido }} <span class="badge {{ pedido.badge }}" style="vertical-align:middle">{{ pedido.get_estado_display }}</span></h1>
-    <p>{{ pedido.fecha_creacion|date:"d/m/Y H:i" }} · <a href="{{ pedido.cliente.get_absolute_url }}">{{ pedido.cliente.nombre }}</a></p>
+    <p>{{ pedido.fecha_creacion|date:"d/m/Y H:i" }} · <a href="{{ pedido.cliente.get_absolute_url }}">{{ pedido.cliente.nombre }}</a>{% if pedido.cotizacion %} · desde <a href="{{ pedido.cotizacion.get_absolute_url }}">{{ pedido.cotizacion.numero }}</a>{% endif %}</p>
   </div>
   <div class="actions">
     {% for valor, etiqueta in pedido.estados_siguientes %}
@@ -25,7 +25,7 @@
 <section class="card">{% include "cliente/_flujo_pedido.html" %}</section>
 
 <section class="card">
-  <h2>Contenedores</h2>
+  <h2>Detalle</h2>
   {% include "cliente/_items_pedido.html" %}
 </section>
 

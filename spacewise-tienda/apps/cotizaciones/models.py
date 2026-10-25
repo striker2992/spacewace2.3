@@ -66,6 +66,11 @@ class Cotizacion(models.Model):
         actual = [v for v, _ in pasos].index(self.estado)
         return [(v, etiqueta, "done" if i < actual else "current" if i == actual else "") for i, (v, etiqueta) in enumerate(pasos)]
 
+    @property
+    def pedido_vigente(self):
+        """RQ06: pedido no cancelado creado desde esta cotización (una cotización se compra una vez)."""
+        return self.pedidos.exclude(estado=Pedido.Estado.CANCELADO).first()
+
     def get_absolute_url(self):
         return reverse("cotizaciones:detalle", args=[self.pk])
 
@@ -185,6 +190,10 @@ class Pedido(models.Model):
         "clientes.Cliente", on_delete=models.PROTECT, related_name="pedidos"
     )
     numero_pedido = models.CharField(max_length=20, unique=True, null=True, editable=False)
+    # RQ06: si se compró desde una cotización aprobada (los pedidos del carrito no tienen).
+    cotizacion = models.ForeignKey(
+        Cotizacion, on_delete=models.PROTECT, null=True, blank=True, editable=False, related_name="pedidos"
+    )
     estado = models.CharField(max_length=12, choices=Estado.choices, default=Estado.PENDIENTE)
     total = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     # Datos de entrega y contacto tal como el cliente los confirmó en el checkout
@@ -250,6 +259,22 @@ class ItemPedido(models.Model):
 
     def __str__(self):
         return f"{self.cantidad} × {self.contenedor.nombre}"
+
+    @property
+    def subtotal(self):
+        return self.cantidad * self.precio_unitario
+
+
+class ServicioPedido(models.Model):
+    """Servicio adicional de un pedido comprado desde una cotización (transporte, instalación...)."""
+
+    pedido = models.ForeignKey(Pedido, on_delete=models.CASCADE, related_name="servicios")
+    servicio = models.ForeignKey("contenedores.Servicio", on_delete=models.PROTECT)
+    cantidad = models.PositiveIntegerField(default=1)
+    precio_unitario = models.DecimalField(max_digits=12, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.cantidad} × {self.servicio.nombre}"
 
     @property
     def subtotal(self):

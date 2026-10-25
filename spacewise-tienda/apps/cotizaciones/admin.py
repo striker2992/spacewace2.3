@@ -1,6 +1,6 @@
 from django.contrib import admin, messages
 
-from .models import Carrito, Cotizacion, CotizacionItem, CotizacionServicio, ItemCarrito, ItemPedido, Pedido
+from .models import Carrito, Cotizacion, CotizacionItem, CotizacionServicio, ItemCarrito, ItemPedido, Pedido, ServicioPedido
 from .servicios import PedidoError, cambiar_estado_pedido
 
 
@@ -32,14 +32,20 @@ class ItemPedidoInline(admin.TabularInline):
         return False
 
 
+class ServicioPedidoInline(ItemPedidoInline):
+    model = ServicioPedido
+    readonly_fields = ("servicio", "cantidad", "precio_unitario", "subtotal")
+    fields = readonly_fields
+
+
 @admin.register(Pedido)
 class PedidoAdmin(admin.ModelAdmin):
     list_display = ("numero_pedido", "cliente", "estado", "total", "fecha_creacion")
     list_filter = ("estado", "fecha_creacion")
     date_hierarchy = "fecha_creacion"
     search_fields = ("numero_pedido", "cliente__nombre", "cliente__rut", "cliente__email")
-    readonly_fields = ("numero_pedido", "cliente", "total", "fecha_creacion", "fecha_actualizacion")
-    inlines = [ItemPedidoInline]
+    readonly_fields = ("numero_pedido", "cliente", "cotizacion", "total", "fecha_creacion", "fecha_actualizacion")
+    inlines = [ItemPedidoInline, ServicioPedidoInline]
     actions = ["marcar_en_proceso", "marcar_despachado", "marcar_completado", "marcar_cancelado"]
 
     def save_model(self, request, obj, form, change):

@@ -121,6 +121,7 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = "es"
 TIME_ZONE = "America/Santiago"
 USE_I18N = True
+FORMAT_MODULE_PATH = ["config.formats"]  # separador de miles chileno ($3.900.000)
 USE_TZ = True
 
 STATIC_URL = "static/"

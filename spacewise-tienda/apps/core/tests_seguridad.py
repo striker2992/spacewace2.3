@@ -203,3 +203,30 @@ class SeedServiciosTests(TestCase):
         self.assertEqual(Contenedor.objects.count(), 1)  # no carga más datos
         call_command("seed", clave_equipo="Equipo-Demo-2026", stdout=StringIO())
         self.assertEqual(Servicio.objects.count(), len(SERVICIOS))  # no duplica
+
+
+class PreciosChilenosTests(TestCase):
+    def test_formato_de_montos(self):
+        from django.template import engines
+        from django.utils import translation
+
+        t = engines["django"].from_string('{% load ui %}${{ a|floatformat:"0g" }}|{{ a|compact }}|{{ b|compact }}')
+        with translation.override("es"):
+            self.assertEqual(t.render({"a": 3900000, "b": 15500}), "$3.900.000|$3,9M|$15,5k")
+
+    def test_actualizar_precios_de_una_base_existente(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        from apps.contenedores.models import Contenedor, Servicio
+
+        viejo = Contenedor.objects.create(nombre="Contenedor 20' estándar", tipo="20DC", condicion="usado", precio=2600, stock=1)
+        propio = Contenedor.objects.create(nombre="Mi contenedor", tipo="20DC", precio=1234, stock=1)
+        Servicio.objects.create(nombre="Climatización", precio=5200, unidad="unidad")
+        call_command("seed", clave_equipo="x-Equipo-2026", actualizar_precios=True, stdout=StringIO())
+        viejo.refresh_from_db()
+        propio.refresh_from_db()
+        self.assertEqual(viejo.precio, 2100000)
+        self.assertEqual(Servicio.objects.get(nombre="Climatización").precio, 520000)
+        self.assertEqual(propio.precio, 1234)  # lo que no es de la demo no se toca

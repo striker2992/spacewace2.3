@@ -43,12 +43,14 @@ def icon(name, css_class=""):
 
 @register.filter
 def compact(valor):
-    """15500 -> "$15.5k", 1200000 -> "$1.2M" (para tarjetas con poco espacio)."""
+    """15500 -> "$15,5k", 7800000 -> "$7,8M", 1250000000 -> "$1.250M" (para tarjetas con poco espacio)."""
     try:
         n = float(valor)
     except (TypeError, ValueError):
         return valor
-    for limite, sufijo in ((1_000_000_000, "B"), (1_000_000, "M"), (1_000, "k")):
+    for limite, sufijo in ((1_000_000, "M"), (1_000, "k")):
         if abs(n) >= limite:
-            return f"${n / limite:.1f}".rstrip("0").rstrip(".") + sufijo
+            texto = f"{n / limite:,.1f}".rstrip("0").rstrip(".")
+            # Formato chileno: punto para miles y coma para decimales.
+            return "$" + texto.replace(",", "_").replace(".", ",").replace("_", ".") + sufijo
     return f"${n:.0f}"

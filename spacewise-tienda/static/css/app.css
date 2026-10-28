@@ -224,6 +224,8 @@ input:focus, select:focus, textarea:focus, .btn:focus-visible { outline: 2px sol
 .qty { width: 84px !important; }
 
 .cart-layout { display: grid; grid-template-columns: 1fr 320px; gap: 20px; align-items: start; }
+/* Sin esto una tabla ancha estira su columna en vez de desplazarse dentro de la tarjeta. */
+.cart-layout > *, .checkout-grid > *, .detail-grid > * { min-width: 0; }
 .summary { position: sticky; top: 80px; }
 .summary .line { display: flex; justify-content: space-between; padding: 6px 0; }
 .summary .line.total { border-top: 1px solid var(--line); margin-top: 8px; padding-top: 14px; font-size: 18px; font-weight: 700; }

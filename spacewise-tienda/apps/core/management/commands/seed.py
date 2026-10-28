@@ -12,23 +12,35 @@ from apps.vendedores.models import Vendedor
 
 User = get_user_model()
 
+# Precios de referencia en pesos chilenos, netos (sin IVA), basados en avisos y proveedores locales.
 # Servicios adicionales del catálogo: (nombre, descripción, precio referencial, se cobra por).
 # Se agregan aunque la base ya tenga datos (solo los que falten), así una base existente los recibe
 # con volver a correr `seed`.
 SERVICIOS = [
-    ("Transporte y entrega", "Traslado en camión pluma hasta la dirección del cliente.", 1200, "km"),
-    ("Instalación y nivelación", "Posicionamiento y nivelación del contenedor en terreno.", 3500, "servicio"),
-    ("Modificación: ventana o puerta", "Corte e instalación de ventana o puerta peatonal.", 2800, "unidad"),
-    ("Mantenimiento preventivo", "Revisión de estructura, sellos y pintura.", 1900, "visita"),
-    ("Instalación eléctrica básica", "Tablero, enchufes e iluminación LED certificados.", 4200, "servicio"),
-    ("Climatización", "Equipo de aire acondicionado split frío/calor instalado.", 5200, "unidad"),
-    ("Aislación térmica", "Paneles aislantes en paredes y techo para oficinas o bodegas.", 6500, "servicio"),
-    ("Revestimiento interior", "Terminación interior en madera o paneles de PVC.", 4800, "servicio"),
-    ("Piso vinílico", "Piso vinílico de alto tráfico sobre la base del contenedor.", 2400, "servicio"),
-    ("Pintura personalizada", "Pintura exterior con los colores o el logo de la empresa.", 3200, "servicio"),
-    ("Candado de seguridad (lockbox)", "Caja protectora y candado de alta seguridad para las puertas.", 650, "unidad"),
-    ("Grúa para descarga", "Grúa horquilla o pluma adicional para maniobras complejas.", 2900, "hora"),
-    ("Limpieza y sanitización", "Lavado interior y sanitización, recomendado para refrigerados.", 1400, "servicio"),
+    ("Transporte y entrega", "Traslado en camión pluma hasta la dirección del cliente.", 1800, "km"),
+    ("Instalación y nivelación", "Posicionamiento y nivelación del contenedor en terreno.", 180000, "servicio"),
+    ("Modificación: ventana o puerta", "Corte e instalación de ventana o puerta peatonal.", 320000, "unidad"),
+    ("Mantenimiento preventivo", "Revisión de estructura, sellos y pintura.", 120000, "visita"),
+    ("Instalación eléctrica básica", "Tablero, enchufes e iluminación LED certificados.", 650000, "servicio"),
+    ("Climatización", "Equipo de aire acondicionado split 12.000 BTU frío/calor instalado.", 520000, "unidad"),
+    ("Aislación térmica", "Paneles aislantes en paredes y techo para oficinas o bodegas.", 1200000, "servicio"),
+    ("Revestimiento interior", "Terminación interior en madera o paneles de PVC.", 950000, "servicio"),
+    ("Piso vinílico", "Piso vinílico de alto tráfico sobre la base del contenedor.", 380000, "servicio"),
+    ("Pintura personalizada", "Pintura exterior con los colores o el logo de la empresa.", 450000, "servicio"),
+    ("Candado de seguridad (lockbox)", "Caja protectora y candado de alta seguridad para las puertas.", 75000, "unidad"),
+    ("Grúa para descarga", "Grúa horquilla o pluma adicional para maniobras complejas.", 45000, "hora"),
+    ("Limpieza y sanitización", "Lavado interior y sanitización, recomendado para refrigerados.", 90000, "servicio"),
+]
+
+# Contenedores de demostración: (nombre, tipo, condición, precio neto en CLP, stock, ubicación).
+CATALOGO = [
+    ("Contenedor 20' estándar", "20DC", "nuevo", 3900000, 15, "Coronel"),
+    ("Contenedor 20' estándar", "20DC", "usado", 2100000, 22, "San Antonio"),
+    ("Contenedor 40' estándar", "40DC", "nuevo", 5900000, 10, "Coronel"),
+    ("Contenedor 40' High Cube", "40HC", "nuevo", 6500000, 8, "Valparaíso"),
+    ("Contenedor 40' refrigerado", "40RF", "usado", 7500000, 3, "San Antonio"),
+    ("Contenedor 20' Open Top", "20OT", "nuevo", 5200000, 4, "Coronel"),
+    ("Contenedor oficina 20'", "20OF", "nuevo", 3300000, 2, "Coronel"),
 ]
 
 
@@ -36,6 +48,10 @@ class Command(BaseCommand):
     help = "Carga datos de demostración. En producción exige --clave-equipo para admin y vendedores."
 
     def add_arguments(self, parser):
+        parser.add_argument(
+            "--actualizar-precios", action="store_true",
+            help="Pone los precios de referencia en los contenedores y servicios de demo que ya existen.",
+        )
         parser.add_argument(
             "--clave-equipo",
             help="Contraseña para admin y vendedores (obligatoria con DJANGO_DEBUG=0: "
@@ -97,20 +113,19 @@ class Command(BaseCommand):
             nuevos += creado
         if nuevos:
             self.stdout.write(f"{nuevos} servicio(s) adicional(es) agregado(s).")
+        if options.get("actualizar_precios"):
+            n = sum(Servicio.objects.filter(nombre=nombre).update(precio=p) for nombre, _, p, _ in SERVICIOS)
+            n += sum(
+                Contenedor.objects.filter(nombre=nombre, condicion=c).update(precio=p)
+                for nombre, _, c, p, _, _ in CATALOGO
+            )
+            # Las cotizaciones y pedidos ya hechos conservan sus precios: son registros históricos.
+            self.stdout.write(f"Precios de referencia actualizados en {n} contenedor(es) y servicio(s).")
 
         if Contenedor.objects.exists():
             self.stdout.write("Ya hay datos; no se cargó nada más.")
             return
 
-        catalogo = [
-            ("Contenedor 20' estándar", "20DC", "nuevo", 4200, 15, "Coronel"),
-            ("Contenedor 20' estándar", "20DC", "usado", 2600, 22, "San Antonio"),
-            ("Contenedor 40' estándar", "40DC", "nuevo", 6100, 10, "Coronel"),
-            ("Contenedor 40' High Cube", "40HC", "nuevo", 6900, 8, "Valparaíso"),
-            ("Contenedor 40' refrigerado", "40RF", "usado", 14500, 3, "San Antonio"),
-            ("Contenedor 20' Open Top", "20OT", "nuevo", 5400, 4, "Coronel"),
-            ("Contenedor oficina 20'", "20OF", "nuevo", 9800, 2, "Coronel"),
-        ]
         medidas = {
             "20DC": "Medidas internas: 5,90 x 2,35 x 2,39 m\nCapacidad: 33 m³\nCarga máxima: 28.000 kg",
             "40DC": "Medidas internas: 12,03 x 2,35 x 2,39 m\nCapacidad: 67 m³\nCarga máxima: 26.500 kg",
@@ -125,7 +140,7 @@ class Command(BaseCommand):
                 descripcion=f"{n} en condición {c}, listo para entrega en {u}.",
                 especificaciones=medidas[t],
             )
-            for n, t, c, p, s, u in catalogo
+            for n, t, c, p, s, u in CATALOGO
         ]
         # Algunos con otra disponibilidad, para ver los estados en el catálogo
         contenedores[2].estado = Contenedor.Estado.ARRENDADO

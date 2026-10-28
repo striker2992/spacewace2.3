@@ -94,12 +94,20 @@ class NavegadorTests(StaticLiveServerTestCase):
             "jefe": ["/panel/", "/panel/cotizaciones/", f"/panel/cotizaciones/{cot.pk}/", "/panel/garantias/",
                      "/panel/reportes/", "/panel/clientes/", "/panel/contenedores/", "/panel/pedidos/"],
         }
+        # Montos largos en el carrito (pesos chilenos): 3 × $6.500.000.
+        Contenedor.objects.filter(pk=self.contenedor.pk).update(precio=6500000)
+        rutas["ana@ejemplo.cl"].append("/carrito/")
         problemas = []
         for ancho in (390, 768, 1280):
             for usuario, urls in rutas.items():
                 page = self.pagina(ancho)
                 if usuario:
                     self.entrar(page, usuario)
+                if usuario == "ana@ejemplo.cl":
+                    page.goto(f"{self.live_server_url}/catalogo/{self.contenedor.pk}/")
+                    page.fill("input[name=cantidad]", "3")
+                    with page.expect_navigation():
+                        page.click("text=Agregar al carrito")
                 for url in urls:
                     page.goto(self.live_server_url + url)
                     sobra = page.evaluate("document.documentElement.scrollWidth - window.innerWidth")

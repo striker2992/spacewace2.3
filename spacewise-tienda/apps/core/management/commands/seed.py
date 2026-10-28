@@ -12,6 +12,25 @@ from apps.vendedores.models import Vendedor
 
 User = get_user_model()
 
+# Servicios adicionales del catálogo: (nombre, descripción, precio referencial, se cobra por).
+# Se agregan aunque la base ya tenga datos (solo los que falten), así una base existente los recibe
+# con volver a correr `seed`.
+SERVICIOS = [
+    ("Transporte y entrega", "Traslado en camión pluma hasta la dirección del cliente.", 1200, "km"),
+    ("Instalación y nivelación", "Posicionamiento y nivelación del contenedor en terreno.", 3500, "servicio"),
+    ("Modificación: ventana o puerta", "Corte e instalación de ventana o puerta peatonal.", 2800, "unidad"),
+    ("Mantenimiento preventivo", "Revisión de estructura, sellos y pintura.", 1900, "visita"),
+    ("Instalación eléctrica básica", "Tablero, enchufes e iluminación LED certificados.", 4200, "servicio"),
+    ("Climatización", "Equipo de aire acondicionado split frío/calor instalado.", 5200, "unidad"),
+    ("Aislación térmica", "Paneles aislantes en paredes y techo para oficinas o bodegas.", 6500, "servicio"),
+    ("Revestimiento interior", "Terminación interior en madera o paneles de PVC.", 4800, "servicio"),
+    ("Piso vinílico", "Piso vinílico de alto tráfico sobre la base del contenedor.", 2400, "servicio"),
+    ("Pintura personalizada", "Pintura exterior con los colores o el logo de la empresa.", 3200, "servicio"),
+    ("Candado de seguridad (lockbox)", "Caja protectora y candado de alta seguridad para las puertas.", 650, "unidad"),
+    ("Grúa para descarga", "Grúa horquilla o pluma adicional para maniobras complejas.", 2900, "hora"),
+    ("Limpieza y sanitización", "Lavado interior y sanitización, recomendado para refrigerados.", 1400, "servicio"),
+]
+
 
 class Command(BaseCommand):
     help = "Carga datos de demostración. En producción exige --clave-equipo para admin y vendedores."
@@ -70,6 +89,15 @@ class Command(BaseCommand):
             )
             self.stdout.write("Cliente de tienda camila@ejemplo.cl / demo1234 creado.")
 
+        nuevos = 0
+        for n, d, p, u in SERVICIOS:
+            _, creado = Servicio.objects.get_or_create(
+                nombre=n, defaults={"descripcion": d, "precio": p, "unidad": u}
+            )
+            nuevos += creado
+        if nuevos:
+            self.stdout.write(f"{nuevos} servicio(s) adicional(es) agregado(s).")
+
         if Contenedor.objects.exists():
             self.stdout.write("Ya hay datos; no se cargó nada más.")
             return
@@ -116,15 +144,8 @@ class Command(BaseCommand):
             for i, n in enumerate(nombres, start=1)
         ]
 
-        servicios = [
-            Servicio.objects.create(nombre=n, descripcion=d, precio=p, unidad=u)
-            for n, d, p, u in [
-                ("Transporte y entrega", "Traslado en camión pluma hasta la dirección del cliente.", 1200, "km"),
-                ("Instalación y nivelación", "Posicionamiento y nivelación del contenedor en terreno.", 3500, "servicio"),
-                ("Modificación: ventana o puerta", "Corte e instalación de ventana o puerta peatonal.", 2800, "unidad"),
-                ("Mantenimiento preventivo", "Revisión de estructura, sellos y pintura.", 1900, "visita"),
-            ]
-        ]
+        # Los 4 primeros se usan en las cotizaciones de ejemplo.
+        servicios = [Servicio.objects.get(nombre=n) for n, *_ in SERVICIOS[:4]]
 
         hoy = timezone.localdate()
         estados_cot = ["aprobada", "pendiente", "rechazada", "pendiente", "aprobada", "pendiente"]

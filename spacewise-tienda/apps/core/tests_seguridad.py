@@ -182,3 +182,24 @@ class DespliegueTests(TestCase):
         User = get_user_model()
         self.assertTrue(User.objects.get(username="admin").check_password("Equipo-Demo-2026"))
         self.assertTrue(User.objects.get(username="ana").check_password("Equipo-Demo-2026"))
+
+
+class SeedServiciosTests(TestCase):
+    def test_agrega_los_servicios_que_falten_aunque_ya_haya_datos(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        from apps.contenedores.models import Contenedor, Servicio
+
+        from .management.commands.seed import SERVICIOS
+
+        # Una base "antigua": con contenedores y solo uno de los servicios.
+        Contenedor.objects.create(nombre="Dry 20", tipo="20DC", precio=4000, stock=1)
+        Servicio.objects.create(nombre="Transporte y entrega", precio=999, unidad="km")
+        call_command("seed", clave_equipo="Equipo-Demo-2026", stdout=StringIO())
+        self.assertEqual(Servicio.objects.count(), len(SERVICIOS))
+        self.assertEqual(Servicio.objects.get(nombre="Transporte y entrega").precio, 999)  # no pisa lo existente
+        self.assertEqual(Contenedor.objects.count(), 1)  # no carga más datos
+        call_command("seed", clave_equipo="Equipo-Demo-2026", stdout=StringIO())
+        self.assertEqual(Servicio.objects.count(), len(SERVICIOS))  # no duplica

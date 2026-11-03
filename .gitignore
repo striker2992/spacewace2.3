@@ -17,3 +17,6 @@ staticfiles/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Clave secreta de la demo pública (demo_publica.py)
+.demo_secret_key

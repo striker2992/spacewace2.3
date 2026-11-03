@@ -112,6 +112,22 @@ python manage.py test --tag e2e
 El proyecto ya trae lo necesario para producción: WhiteNoise sirve el CSS/JS, `gunicorn` como
 servidor, HTTPS configurable y errores en los logs del hosting.
 
+### Demo pública desde tu PC (gratis, sin cuenta)
+
+Tu PC hace de servidor con tu MySQL y un túnel de Cloudflare le da una dirección pública
+`https://….trycloudflare.com`. Ideal para la presentación.
+
+1. Instala el túnel una vez: `winget install --id Cloudflare.cloudflared` (luego abre una ventana nueva).
+2. Cambia las contraseñas de ejemplo del equipo (están publicadas aquí):
+   `python manage.py changepassword admin` (y `ana`, `luis`, `marta`).
+3. Doble clic en `demo_publica.bat` (o `python demo_publica.py` con el venv activado).
+
+El script aplica la configuración de producción solo mientras corre (tu `.env` no cambia), genera
+una clave secreta propia (`.demo_secret_key`, no se sube a GitHub), ejecuta `collectstatic` y
+`migrate`, se niega a publicar si alguna cuenta del equipo sigue con una clave de ejemplo, y muestra
+la dirección pública. **Ctrl+C** apaga todo. Funciona mientras el PC esté encendido; la dirección
+cambia cada vez que se abre el túnel.
+
 ### Pasos para cualquier hosting
 
 1. Crear la base MySQL (`utf8mb4`) y anotar host, nombre, usuario y clave.

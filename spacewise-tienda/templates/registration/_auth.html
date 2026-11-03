@@ -5,12 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{% endblock %} · SpaceWise</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="{% static 'img/logo.svg' %}" type="image/svg+xml">
+  <link rel="icon" href="{% static 'img/favicon-32.png' %}" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="{% static 'img/apple-touch-icon.png' %}">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
 </head>
 <body>
 <div class="login">
   <section class="login-hero">
-    <div class="login-logo">{% icon "box" %}</div>
+    <img class="login-logo" src="{% static 'img/logo.svg' %}" alt="SpaceWise" width="72" height="72">
     <h1>Recupera tu acceso</h1>
     <p>Te enviaremos un enlace a tu correo para que elijas una contraseña nueva.</p>
   </section>

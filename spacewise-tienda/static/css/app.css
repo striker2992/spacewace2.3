@@ -23,8 +23,7 @@ a:hover { text-decoration: underline; }
 
 /* layout */
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; }
-.logo { width: 32px; height: 32px; border-radius: 8px; background: var(--primary); color: #fff; display: grid; place-items: center; }
-.logo .ico { width: 18px; height: 18px; }
+.logo { width: 32px; height: 32px; display: block; flex: none; }
 .link-btn { background: none; border: 0; color: var(--muted); cursor: pointer; font: inherit; padding: 4px 8px; border-radius: 6px; }
 .link-btn:hover { background: #f3f4f6; color: var(--text); }
 
@@ -141,8 +140,7 @@ input:focus, select:focus, textarea:focus, .btn:focus-visible { outline: 2px sol
 .login-hero::before { width: 300px; height: 300px; top: -80px; left: -80px; }
 .login-hero::after { width: 320px; height: 320px; bottom: -110px; right: -90px; }
 .login-hero > * { position: relative; }
-.login-logo { width: 54px; height: 54px; background: var(--accent); color: var(--navy); border-radius: 14px; display: grid; place-items: center; margin: 0 auto 18px; }
-.login-logo .ico { width: 28px; height: 28px; }
+.login-logo { width: 72px; height: 72px; display: block; margin: 0 auto 18px; border-radius: 16px; box-shadow: 0 0 0 3px rgba(255,255,255,.18); }
 .login-hero h1 { margin: 0 0 10px; font-size: 26px; }
 .login-hero p { margin: 0 auto; max-width: 280px; color: #c7d7fe; line-height: 1.5; }
 .login-form { display: grid; place-content: center; padding: 40px; background: #fff; }

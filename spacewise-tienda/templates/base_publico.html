@@ -6,13 +6,16 @@
   <title>{% block title %}SpaceWise{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="{% static 'img/logo.svg' %}" type="image/svg+xml">
+  <link rel="icon" href="{% static 'img/favicon-32.png' %}" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="{% static 'img/apple-touch-icon.png' %}">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
 </head>
 <body>
 {% with ns=request.resolver_match.namespace url=request.resolver_match.url_name %}
 <header class="pub-header">
   <div class="pub-bar">
-    <a class="brand" href="{% if es_personal %}{% url 'dashboard' %}{% else %}{% url 'catalogo' %}{% endif %}"><span class="logo">{% icon "box" %}</span> SpaceWise</a>
+    <a class="brand" href="{% if es_personal %}{% url 'dashboard' %}{% else %}{% url 'catalogo' %}{% endif %}"><img class="logo" src="{% static 'img/logo.svg' %}" alt="" width="32" height="32"> SpaceWise</a>
     <nav class="pub-nav" aria-label="Principal">
       {% if es_personal %}
       <a href="{% url 'dashboard' %}" class="{% if url == 'dashboard' %}active{% endif %}">Panel</a>

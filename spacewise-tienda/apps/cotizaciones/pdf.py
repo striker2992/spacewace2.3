@@ -3,6 +3,7 @@
 from datetime import timedelta
 from io import BytesIO
 
+from django.conf import settings
 from django.contrib import messages
 from django.http import HttpResponse
 from django.shortcuts import redirect
@@ -15,7 +16,7 @@ try:
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
     from reportlab.lib.units import mm
-    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+    from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
     REPORTLAB_DISPONIBLE = True
     AZUL = colors.HexColor("#2563eb")
@@ -57,10 +58,18 @@ def generar_pdf(cot, enlace=None):
 
     # Encabezado: empresa a la izquierda, número y fechas a la derecha
     emitida = timezone.localdate()
+    marca = [Paragraph("<font color='#2563eb'><b>SpaceWise</b></font>", e["titulo"]),
+             Paragraph("Venta y arriendo de contenedores", e["chico"])]
+    logo = settings.BASE_DIR / "static" / "img" / "logo-pdf.png"
+    if logo.exists():
+        marca = Table(
+            [[Image(str(logo), width=14 * mm, height=14 * mm), marca]],
+            colWidths=[17 * mm, ancho * 0.6 - 17 * mm],
+            style=[("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("LEFTPADDING", (0, 0), (-1, -1), 0)],
+        )
     encabezado = Table(
         [[
-            [Paragraph("<font color='#2563eb'><b>SpaceWise</b></font>", e["titulo"]),
-             Paragraph("Venta y arriendo de contenedores", e["chico"])],
+            marca,
             [Paragraph(f"<b>COTIZACIÓN {cot.numero}</b>", e["derecha"]),
              Paragraph(f"Fecha: {cot.fecha:%d/%m/%Y}", e["derecha"]),
              Paragraph(f"Emitido: {emitida:%d/%m/%Y}", e["derecha"]),

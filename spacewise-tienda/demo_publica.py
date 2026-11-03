@@ -17,6 +17,9 @@ from pathlib import Path
 
 BASE = Path(__file__).resolve().parent
 PUERTO = os.environ.get("DEMO_PUERTO", "8000")
+# HTTP/2 (TCP) pasa por casi todas las redes; QUIC (UDP 7844), el predeterminado de cloudflared,
+# suele estar bloqueado en redes de universidades y empresas.
+PROTOCOLO = os.environ.get("DEMO_PROTOCOLO", "http2")
 ARCHIVO_CLAVE = BASE / ".demo_secret_key"  # en .gitignore
 CLAVES_DE_EJEMPLO = {"admin1234", "demo1234"}
 
@@ -89,10 +92,11 @@ def main():
         [sys.executable, str(BASE / "manage.py"), "runserver", f"127.0.0.1:{PUERTO}", "--noreload"], cwd=BASE
     )
     tunel = subprocess.Popen(
-        [cloudflared, "tunnel", "--no-autoupdate", "--url", f"http://127.0.0.1:{PUERTO}"],
+        [cloudflared, "tunnel", "--no-autoupdate", "--protocol", PROTOCOLO, "--url", f"http://127.0.0.1:{PUERTO}"],
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace",
     )
     print("» Abriendo el túnel de Cloudflare (puede tardar unos segundos)...")
+    fallos = 0
     try:
         for linea in tunel.stdout:
             url = re.search(r"https://[-a-z0-9]+\.trycloudflare\.com", linea)
@@ -103,6 +107,14 @@ def main():
                 print("=" * 64 + "\n")
             elif "ERR" in linea:
                 print("[túnel]", linea.rstrip())
+                if "Failed to dial" in linea or "Allow outbound" in linea:
+                    fallos += 1
+                    if fallos == 3:
+                        print(
+                            "\n» Esta red está bloqueando la conexión del túnel (puerto 7844).\n"
+                            "  Prueba con otra red, por ejemplo compartiendo internet desde tu celular,\n"
+                            "  y vuelve a abrir la demo. Ctrl+C para salir.\n"
+                        )
         tunel.wait()
     except KeyboardInterrupt:
         pass

@@ -20,3 +20,6 @@ SPACEWISE - PUESTA EN MARCHA (PowerShell, desde esta carpeta)
 5) Abrir http://127.0.0.1:8000/
    admin / admin1234   (entra a /admin/)
    camila@ejemplo.cl / demo1234  (tienda, se entra con el correo)
+
+PUBLICAR EN INTERNET (DEMO): ver docs\GUIA_DEMO_PUBLICA.md
+   (instalar cloudflared, cambiar contraseñas del equipo y doble clic en demo_publica.bat)

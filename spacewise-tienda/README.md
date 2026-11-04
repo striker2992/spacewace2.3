@@ -114,6 +114,8 @@ servidor, HTTPS configurable y errores en los logs del hosting.
 
 ### Demo pública desde tu PC (gratis, sin cuenta)
 
+**Guía paso a paso desde cero: [docs/GUIA_DEMO_PUBLICA.md](docs/GUIA_DEMO_PUBLICA.md).**
+
 Tu PC hace de servidor con tu MySQL y un túnel de Cloudflare le da una dirección pública
 `https://….trycloudflare.com`. Ideal para la presentación.
 

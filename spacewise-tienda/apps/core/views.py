@@ -141,11 +141,11 @@ class LoginView(auth_views.LoginView):
         return resolve_url("dashboard" if es_personal(self.request.user) else "catalogo")
 
     # --- Intentos fallidos (SEG-12) ---
-    # Por cuenta: tras LOGIN_MAX_INTENTOS fallos se bloquea hasta que un administrador la libere.
-    # Por IP: un límite temporal frena a quien prueba muchas cuentas distintas.
+    # Por cuenta: tras LOGIN_MAX_INTENTOS fallos se bloquea LOGIN_BLOQUEO_MINUTOS (o hasta que la libere
+    # un administrador). Por IP: un límite temporal frena a quien prueba muchas cuentas distintas.
     MSG_BLOQUEADA = (
-        "Tu cuenta está bloqueada por demasiados intentos fallidos. "
-        "Contacta a un administrador de SpaceWise para desbloquearla."
+        f"Tu cuenta está bloqueada por {settings.LOGIN_BLOQUEO_MINUTOS} minutos por demasiados intentos "
+        "fallidos. Espera o contacta a un administrador de SpaceWise para desbloquearla antes."
     )
 
     def _clave_ip(self):
@@ -183,7 +183,7 @@ class LoginView(auth_views.LoginView):
 
 class _RecuperarClaveForm(auth_forms.PasswordResetForm):
     def get_users(self, email):
-        # Una cuenta bloqueada no se libera cambiando la contraseña: la desbloquea un administrador.
+        # Mientras dure el bloqueo no se envía el enlace: cambiar la clave no lo acorta.
         return (u for u in super().get_users(email) if not cuentas.esta_bloqueada(u))
 
 

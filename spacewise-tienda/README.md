@@ -96,10 +96,11 @@ python manage.py test --tag e2e
 
 ## Seguridad de las cuentas
 
-- Tras **4 intentos fallidos** seguidos, la cuenta **se bloquea** (aunque luego se escriba la clave correcta)
-  hasta que un **administrador** la libere en **Panel → Cuentas bloqueadas** (`/panel/cuentas-bloqueadas/`,
-  aviso en el panel) o desde la ficha del cliente. Si se bloquea la del propio administrador:
-  `python manage.py desbloquear_cuenta admin`. Recuperar la contraseña no desbloquea la cuenta.
+- Tras **4 intentos fallidos** seguidos, la cuenta **se bloquea 15 minutos** (aunque luego se escriba la
+  clave correcta) y después se desbloquea sola. Un **administrador** puede liberarla antes en
+  **Panel → Cuentas bloqueadas** (`/panel/cuentas-bloqueadas/`, aviso en el panel) o desde la ficha del
+  cliente; también `python manage.py desbloquear_cuenta <usuario>`. Durante el bloqueo no se envía el
+  enlace de «¿Olvidaste tu contraseña?».
   Además, 20 intentos fallidos desde una misma IP pausan los inicios de sesión por 15 minutos.
   El login de `/admin/` pasa por el mismo control.
 - **¿Olvidaste tu contraseña?** envía un enlace válido por 2 horas y de un solo uso. En desarrollo el

@@ -41,7 +41,7 @@
       </div>
       <p style="margin:-6px 0 16px;text-align:right;font-size:12px"><a href="{% url 'olvide_clave' %}">¿Olvidaste tu contraseña?</a></p>
       <input type="hidden" name="next" value="{{ next }}">
-      <p class="muted" style="margin:0 0 14px;font-size:11px">Por seguridad, tras 4 intentos fallidos la cuenta se bloquea y debe desbloquearla un administrador.</p>
+      <p class="muted" style="margin:0 0 14px;font-size:11px">Por seguridad, tras 4 intentos fallidos la cuenta se bloquea por 15 minutos.</p>
       <button class="btn btn-accent" type="submit">Ingresar a mi cuenta</button>
       <p class="muted" style="text-align:center;font-size:12px;margin-top:22px">¿Eres cliente nuevo? <a href="{% url 'registro' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Crear una cuenta</a> · <a href="{% url 'catalogo' %}">Ver catálogo</a></p>
     </form>

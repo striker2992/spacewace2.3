@@ -12,7 +12,7 @@ CLAVE = "clave-de-prueba-123"
 
 
 class BloqueoCuentaTests(TestCase):
-    """SEG-12: tras 4 intentos fallidos la cuenta se bloquea hasta que un administrador la libere."""
+    """SEG-12: tras 4 intentos fallidos la cuenta se bloquea 15 minutos (un administrador puede liberarla antes)."""
 
     @classmethod
     def setUpTestData(cls):
@@ -41,7 +41,7 @@ class BloqueoCuentaTests(TestCase):
         resp = self.entrar("mala")
         self.assertContains(resp, "Tu cuenta está bloqueada")
         resp = self.entrar(CLAVE, ip="10.9.9.9")  # tampoco desde otra conexión
-        self.assertContains(resp, "Contacta a un administrador", status_code=403)
+        self.assertContains(resp, "bloqueada por 15 minutos", status_code=403)
         self.assertNotIn("_auth_user_id", self.client.session)
 
     def test_un_acierto_reinicia_el_contador(self):
@@ -53,12 +53,33 @@ class BloqueoCuentaTests(TestCase):
             self.entrar("mala")
         self.assertEqual(self.entrar(CLAVE).status_code, 302)
 
-    def test_el_bloqueo_no_vence_con_el_tiempo(self):
-        from django.core.cache import cache as c
+    def test_a_los_15_minutos_se_desbloquea_sola(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from apps.core.models import SeguridadCuenta
 
         self.bloquear()
-        c.clear()  # aunque se borren los contadores temporales por IP
-        self.assertEqual(self.entrar(CLAVE).status_code, 403)
+        hace = lambda m: timezone.now() - timedelta(minutes=m)  # noqa: E731
+        SeguridadCuenta.objects.filter(usuario=self.ana).update(bloqueada_en=hace(14))
+        self.assertEqual(self.entrar(CLAVE).status_code, 403)  # aún faltaba un minuto
+        SeguridadCuenta.objects.filter(usuario=self.ana).update(bloqueada_en=hace(16))
+        self.assertEqual(self.entrar(CLAVE).status_code, 302)
+        self.assertEqual(SeguridadCuenta.objects.get(usuario=self.ana).intentos_fallidos, 0)
+
+    def test_tras_vencer_vuelve_a_tener_4_intentos(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from apps.core.models import SeguridadCuenta
+
+        self.bloquear()
+        SeguridadCuenta.objects.filter(usuario=self.ana).update(bloqueada_en=timezone.now() - timedelta(minutes=16))
+        for _ in range(3):
+            self.assertEqual(self.entrar("mala").status_code, 200)
+        self.assertContains(self.entrar("mala"), "Tu cuenta está bloqueada")
 
     def test_tambien_con_el_nombre_de_usuario_del_equipo(self):
         self.bloquear(usuario="JEFE")

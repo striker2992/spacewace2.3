@@ -1,9 +1,12 @@
+from datetime import timedelta
+
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 
 class SeguridadCuenta(models.Model):
-    """Intentos fallidos de inicio de sesión y bloqueo de una cuenta (lo libera un administrador)."""
+    """Intentos fallidos de inicio de sesión y bloqueo temporal de una cuenta."""
 
     usuario = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="seguridad")
     intentos_fallidos = models.PositiveSmallIntegerField(default=0)
@@ -22,5 +25,12 @@ class SeguridadCuenta(models.Model):
         return f"{self.usuario} ({'bloqueada' if self.bloqueada else 'activa'})"
 
     @property
+    def se_desbloquea_en(self):
+        """Hora en que termina el bloqueo (None si no está bloqueada)."""
+        if self.bloqueada_en is None:
+            return None
+        return self.bloqueada_en + timedelta(minutes=settings.LOGIN_BLOQUEO_MINUTOS)
+
+    @property
     def bloqueada(self):
-        return self.bloqueada_en is not None
+        return self.bloqueada_en is not None and self.se_desbloquea_en > timezone.now()

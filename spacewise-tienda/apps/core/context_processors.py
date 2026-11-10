@@ -22,7 +22,7 @@ def tienda(request):
 
         ctx["garantias_pendientes"] = Garantia.objects.filter(estado=Garantia.Estado.PENDIENTE).count()
         if user.is_staff or user.is_superuser:
-            from .models import SeguridadCuenta
+            from .cuentas import cuentas_bloqueadas
 
-            ctx["cuentas_bloqueadas"] = SeguridadCuenta.objects.filter(bloqueada_en__isnull=False).count()
+            ctx["cuentas_bloqueadas"] = cuentas_bloqueadas().count()
     return ctx

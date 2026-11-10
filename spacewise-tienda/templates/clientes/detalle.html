@@ -14,7 +14,7 @@
 
 {% if cuenta_bloqueada %}
 <section class="card" style="background:var(--bad-bg);border-color:transparent;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
-  <span><b>Cuenta bloqueada</b> por intentos fallidos de inicio de sesión. El cliente no puede entrar a la tienda.</span>
+  <span><b>Cuenta bloqueada</b> por intentos fallidos de inicio de sesión: el cliente no puede entrar a la tienda hasta que pasen 15 minutos o se desbloquee.</span>
   {% if user.is_staff or user.is_superuser %}
   <form class="inline" method="post" action="{% url 'desbloquear_cuenta' cliente.usuario_id %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-primary" type="submit">Desbloquear</button></form>
   {% else %}<small>Pide a un administrador que la desbloquee.</small>{% endif %}

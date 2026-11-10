@@ -117,6 +117,10 @@ python manage.py test --tag e2e
 El proyecto ya trae lo necesario para producción: WhiteNoise sirve el CSS/JS, `gunicorn` como
 servidor, HTTPS configurable y errores en los logs del hosting.
 
+### Servidor de la universidad (iLab)
+
+Un solo script instala y actualiza todo en una VM Ubuntu 24.04: **[docs/GUIA_SERVIDOR_ILAB.md](docs/GUIA_SERVIDOR_ILAB.md)** (`deploy/instalar_servidor.sh`).
+
 ### Demo pública desde tu PC (gratis, sin cuenta)
 
 **Guía paso a paso desde cero: [docs/GUIA_DEMO_PUBLICA.md](docs/GUIA_DEMO_PUBLICA.md).**

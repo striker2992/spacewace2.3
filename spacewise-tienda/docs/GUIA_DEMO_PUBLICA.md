@@ -121,6 +121,7 @@ mysqldump -u root -p spacewise_db > respaldo_antes_demo.sql
 | `Esta red está bloqueando la conexión del túnel` | Conéctate a la zona Wi-Fi del celular y vuelve a abrir la demo |
 | `Access denied for user 'root'` | Revisa `DB_PASSWORD` en el `.env` (y que no se llame `.env.txt`) |
 | `Unknown database 'spacewise_db'` | Falta el paso 8 |
+| `Tu cuenta está bloqueada por demasiados intentos fallidos` | Un administrador la desbloquea en **Panel → Cuentas bloqueadas**; si es la de `admin`: `python manage.py desbloquear_cuenta admin` |
 | `Can't connect to MySQL server` | Inicia MySQL desde «Servicios» de Windows o desde Workbench |
 | La ventana se cierra o no aparece la dirección | Haz una captura de lo que muestra y compártela con el equipo |
 

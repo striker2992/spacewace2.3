@@ -10,6 +10,14 @@
 </a>
 {% endif %}
 
+{% if cuentas_bloqueadas %}
+<a class="row-link" href="{% url 'cuentas_bloqueadas' %}" style="background:var(--bad-bg);border-color:transparent">
+  <span class="chip tone-amber">{% icon "lock" %}</span>
+  <span class="label">Hay {{ cuentas_bloqueadas }} cuenta{{ cuentas_bloqueadas|pluralize }} bloqueada{{ cuentas_bloqueadas|pluralize }} por intentos fallidos</span>
+  <span class="btn btn-sm">Revisar</span>
+</a>
+{% endif %}
+
 {% if garantias_pendientes %}
 <a class="row-link" href="{% url 'garantias:lista' %}?estado=pendiente" style="background:var(--bad-bg);border-color:transparent">
   <span class="chip tone-amber">{% icon "help" %}</span>

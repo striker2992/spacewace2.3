@@ -11,6 +11,8 @@ from django.views.generic import CreateView, DeleteView, DetailView, ListView, U
 
 from apps.core.mixins import BorrarMixin, FormularioMixin, PersonalRequeridoMixin, QueryStringMixin, es_personal
 
+from apps.core.cuentas import esta_bloqueada
+
 from .forms import ClienteForm, PerfilForm, RegistroForm
 from .models import Cliente
 
@@ -47,6 +49,7 @@ class ClienteDetalle(PersonalRequeridoMixin, DetailView):
         ctx["pedidos"] = cliente.pedidos.all()[:5]
         ctx["n_cotizaciones"] = cliente.cotizaciones.count()
         ctx["n_pedidos"] = cliente.pedidos.count()
+        ctx["cuenta_bloqueada"] = bool(cliente.usuario_id) and esta_bloqueada(cliente.usuario)
         return ctx
 
 

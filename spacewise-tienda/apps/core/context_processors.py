@@ -6,7 +6,7 @@ def tienda(request):
     user = request.user
     personal = es_personal(user)
     ctx = {"es_personal": personal, "carrito_cantidad": 0, "pedidos_pendientes": 0, "solicitudes_nuevas": 0,
-           "garantias_pendientes": 0}
+           "garantias_pendientes": 0, "cuentas_bloqueadas": 0}
 
     # Import diferido: evita ciclos al arrancar Django.
     from apps.cotizaciones.carrito import obtener_carrito
@@ -21,4 +21,8 @@ def tienda(request):
         from apps.operaciones.models import Garantia
 
         ctx["garantias_pendientes"] = Garantia.objects.filter(estado=Garantia.Estado.PENDIENTE).count()
+        if user.is_staff or user.is_superuser:
+            from .models import SeguridadCuenta
+
+            ctx["cuentas_bloqueadas"] = SeguridadCuenta.objects.filter(bloqueada_en__isnull=False).count()
     return ctx

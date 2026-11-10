@@ -96,8 +96,12 @@ python manage.py test --tag e2e
 
 ## Seguridad de las cuentas
 
-- Tras **5 intentos fallidos** de inicio de sesión (por cuenta e IP) o 20 desde una misma IP, se bloquea
-  por 15 minutos. El login de `/admin/` pasa por el mismo control.
+- Tras **4 intentos fallidos** seguidos, la cuenta **se bloquea** (aunque luego se escriba la clave correcta)
+  hasta que un **administrador** la libere en **Panel → Cuentas bloqueadas** (`/panel/cuentas-bloqueadas/`,
+  aviso en el panel) o desde la ficha del cliente. Si se bloquea la del propio administrador:
+  `python manage.py desbloquear_cuenta admin`. Recuperar la contraseña no desbloquea la cuenta.
+  Además, 20 intentos fallidos desde una misma IP pausan los inicios de sesión por 15 minutos.
+  El login de `/admin/` pasa por el mismo control.
 - **¿Olvidaste tu contraseña?** envía un enlace válido por 2 horas y de un solo uso. En desarrollo el
   correo se muestra en la consola; para enviarlo de verdad configura `EMAIL_*` en `.env`.
 - La sesión se cierra tras **8 horas sin actividad** (`DJANGO_SESSION_HORAS`).

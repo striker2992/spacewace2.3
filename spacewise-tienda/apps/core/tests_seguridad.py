@@ -11,12 +11,19 @@ from apps.clientes.models import Cliente
 CLAVE = "clave-de-prueba-123"
 
 
-class LimiteIntentosTests(TestCase):
-    """SEG-12: tras varios intentos fallidos se bloquea el inicio de sesión por un tiempo."""
+class BloqueoCuentaTests(TestCase):
+    """SEG-12: tras 4 intentos fallidos la cuenta se bloquea hasta que un administrador la libere."""
 
     @classmethod
     def setUpTestData(cls):
-        get_user_model().objects.create_user("ana@ejemplo.cl", email="ana@ejemplo.cl", password=CLAVE)
+        User = get_user_model()
+        cls.ana = User.objects.create_user("ana@ejemplo.cl", email="ana@ejemplo.cl", password=CLAVE)
+        cls.cliente = Cliente.objects.create(usuario=cls.ana, nombre="Ana Soto", email="ana@ejemplo.cl")
+        cls.admin = User.objects.create_user("jefe", password=CLAVE, is_staff=True)
+        cls.vendedor_user = User.objects.create_user("vende", password=CLAVE)
+        from apps.vendedores.models import Vendedor
+
+        Vendedor.objects.create(user=cls.vendedor_user, codigo="V-1")
 
     def setUp(self):
         cache.clear()
@@ -24,29 +31,91 @@ class LimiteIntentosTests(TestCase):
     def entrar(self, clave, usuario="ana@ejemplo.cl", ip="10.0.0.1"):
         return self.client.post(reverse("login"), {"username": usuario, "password": clave}, REMOTE_ADDR=ip)
 
-    @override_settings(LOGIN_MAX_INTENTOS=3)
-    def test_bloquea_tras_los_intentos_fallidos_aunque_la_clave_sea_correcta(self):
+    def bloquear(self, usuario="ana@ejemplo.cl"):
+        for _ in range(4):
+            self.entrar("mala", usuario=usuario)
+
+    def test_cuarto_fallo_bloquea_y_la_clave_correcta_ya_no_sirve(self):
         for _ in range(3):
             self.assertEqual(self.entrar("mala").status_code, 200)
-        resp = self.entrar(CLAVE)
-        self.assertEqual(resp.status_code, 429)
-        self.assertContains(resp, "Demasiados intentos fallidos", status_code=429)
+        resp = self.entrar("mala")
+        self.assertContains(resp, "Tu cuenta está bloqueada")
+        resp = self.entrar(CLAVE, ip="10.9.9.9")  # tampoco desde otra conexión
+        self.assertContains(resp, "Contacta a un administrador", status_code=403)
         self.assertNotIn("_auth_user_id", self.client.session)
 
-    @override_settings(LOGIN_MAX_INTENTOS=3)
-    def test_el_bloqueo_es_por_ip_y_un_acierto_reinicia_el_contador(self):
+    def test_un_acierto_reinicia_el_contador(self):
         for _ in range(3):
             self.entrar("mala")
-        self.assertEqual(self.entrar(CLAVE, ip="10.0.0.2").status_code, 302)  # otra IP sí entra
-        self.client.logout()
-        cache.clear()
-        self.entrar("mala")
-        self.entrar("mala")
         self.assertEqual(self.entrar(CLAVE).status_code, 302)
         self.client.logout()
-        self.entrar("mala")
-        self.entrar("mala")
-        self.assertEqual(self.entrar(CLAVE).status_code, 302)  # el contador se había reiniciado
+        for _ in range(3):
+            self.entrar("mala")
+        self.assertEqual(self.entrar(CLAVE).status_code, 302)
+
+    def test_el_bloqueo_no_vence_con_el_tiempo(self):
+        from django.core.cache import cache as c
+
+        self.bloquear()
+        c.clear()  # aunque se borren los contadores temporales por IP
+        self.assertEqual(self.entrar(CLAVE).status_code, 403)
+
+    def test_tambien_con_el_nombre_de_usuario_del_equipo(self):
+        self.bloquear(usuario="JEFE")
+        self.assertEqual(self.entrar(CLAVE, usuario="jefe").status_code, 403)
+
+    def test_administrador_ve_y_desbloquea_desde_el_panel(self):
+        self.bloquear()
+        self.client.force_login(self.admin)
+        self.assertContains(self.client.get(reverse("dashboard")), "1 cuenta bloqueada")
+        resp = self.client.get(reverse("cuentas_bloqueadas"))
+        self.assertContains(resp, "ana@ejemplo.cl")
+        self.assertContains(self.client.get(self.cliente.get_absolute_url()), "Cuenta bloqueada")
+        self.client.post(reverse("desbloquear_cuenta", args=[self.ana.pk]))
+        self.client.logout()
+        self.assertEqual(self.entrar(CLAVE).status_code, 302)
+        from apps.core.models import SeguridadCuenta
+
+        seg = SeguridadCuenta.objects.get(usuario=self.ana)
+        self.assertEqual((seg.intentos_fallidos, seg.desbloqueada_por), (0, self.admin))
+
+    def test_vendedor_y_cliente_no_desbloquean(self):
+        self.bloquear()
+        for quien in (self.vendedor_user,):
+            self.client.force_login(quien)
+            self.assertRedirects(self.client.get(reverse("cuentas_bloqueadas")), reverse("dashboard"), fetch_redirect_response=False)
+            self.client.post(reverse("desbloquear_cuenta", args=[self.ana.pk]))
+        otro = get_user_model().objects.create_user("beto@ejemplo.cl", email="beto@ejemplo.cl", password=CLAVE)
+        self.client.force_login(otro)
+        self.client.post(reverse("desbloquear_cuenta", args=[self.ana.pk]))
+        from apps.core.cuentas import esta_bloqueada
+
+        self.assertTrue(esta_bloqueada(self.ana))
+
+    def test_comando_para_desbloquear_al_administrador(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        from apps.core.cuentas import esta_bloqueada
+
+        self.bloquear(usuario="jefe")
+        self.assertTrue(esta_bloqueada(self.admin))
+        call_command("desbloquear_cuenta", "jefe", stdout=StringIO())
+        self.assertFalse(esta_bloqueada(self.admin))
+
+    def test_recuperar_clave_no_libera_una_cuenta_bloqueada(self):
+        self.bloquear()
+        resp = self.client.post(reverse("olvide_clave"), {"email": "ana@ejemplo.cl"})
+        self.assertRedirects(resp, reverse("clave_enviada"))  # misma respuesta, pero sin correo
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_correo_inexistente_no_crea_registros(self):
+        from apps.core.models import SeguridadCuenta
+
+        for _ in range(6):
+            self.entrar("mala", usuario="nadie@ejemplo.cl")
+        self.assertFalse(SeguridadCuenta.objects.exists())
 
     @override_settings(LOGIN_MAX_INTENTOS_IP=4)
     def test_limite_por_ip_probando_muchas_cuentas(self):

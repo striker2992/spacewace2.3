@@ -8,7 +8,9 @@ from django.views.static import serve
 from apps.clientes.views import CambiarClaveView, PerfilView, RegistroView
 from apps.contenedores.views import CatalogoView, ContenedorDetalleView
 from apps.cotizaciones.views_tienda import cotizacion_publica
-from apps.core.views import LoginView, OlvideClaveView, dashboard, inicio, reporte_mensual
+from apps.core.views import (
+    LoginView, OlvideClaveView, cuentas_bloqueadas, dashboard, desbloquear_cuenta, inicio, reporte_mensual,
+)
 
 urlpatterns = [
     # Django Admin: no se enlaza desde ninguna pantalla; queda solo para mantenimiento.
@@ -41,6 +43,8 @@ urlpatterns = [
     # Panel del equipo interno (admins y vendedores)
     path("panel/", dashboard, name="dashboard"),
     path("panel/reportes/", reporte_mensual, name="reportes"),
+    path("panel/cuentas-bloqueadas/", cuentas_bloqueadas, name="cuentas_bloqueadas"),
+    path("panel/cuentas-bloqueadas/<int:pk>/desbloquear/", desbloquear_cuenta, name="desbloquear_cuenta"),
     path("panel/contenedores/", include("apps.contenedores.urls")),
     path("panel/clientes/", include("apps.clientes.urls")),
     path("panel/cotizaciones/", include("apps.cotizaciones.urls")),

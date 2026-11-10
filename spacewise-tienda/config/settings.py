@@ -167,8 +167,9 @@ EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "1") == "1"
 # La sesión se cierra tras estas horas sin actividad (cada visita renueva el plazo).
 SESSION_COOKIE_AGE = int(os.environ.get("DJANGO_SESSION_HORAS", "8")) * 3600
 SESSION_SAVE_EVERY_REQUEST = True
-# Intentos fallidos de inicio de sesión antes de bloquear temporalmente (por cuenta e IP, y por IP).
-LOGIN_MAX_INTENTOS = 5
+# Intentos fallidos seguidos tras los que la cuenta se bloquea hasta que un administrador la libere.
+LOGIN_MAX_INTENTOS = 4
+# Además, intentos fallidos desde una misma IP (cualquier cuenta) antes de una pausa temporal.
 LOGIN_MAX_INTENTOS_IP = 20
 LOGIN_BLOQUEO_MINUTOS = 15
 # Validez del enlace de «¿Olvidaste tu contraseña?».

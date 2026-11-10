@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Cuentas bloqueadas · SpaceWise{% endblock %}
+{% block content %}
+<div class="page-title"><div><h1>Cuentas bloqueadas</h1><p>Cuentas bloqueadas tras 4 intentos fallidos de inicio de sesión. Verifica con la persona antes de desbloquear.</p></div></div>
+<section class="card">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>CUENTA</th><th>TIPO</th><th>BLOQUEADA EL</th><th>ÚLTIMA IP</th><th class="num"></th></tr></thead>
+      <tbody>
+      {% for b in bloqueos %}
+        {% with u=b.usuario %}
+        <tr>
+          <td><b>{{ u.get_full_name|default:u.username }}</b><br><small class="muted">{{ u.email|default:u.username }}</small></td>
+          <td>{% if u.is_staff or u.is_superuser %}Equipo{% elif u.cliente %}<a href="{{ u.cliente.get_absolute_url }}">Cliente</a>{% else %}Usuario{% endif %}</td>
+          <td>{{ b.bloqueada_en|date:"d/m/Y H:i" }}</td>
+          <td>{{ b.ultima_ip|default:"—" }}</td>
+          <td class="num"><form class="inline" method="post" action="{% url 'desbloquear_cuenta' u.pk %}">{% csrf_token %}<button class="btn btn-sm btn-primary" type="submit">Desbloquear</button></form></td>
+        </tr>
+        {% endwith %}
+      {% empty %}
+        <tr><td colspan="5" class="empty">No hay cuentas bloqueadas.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

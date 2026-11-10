@@ -2,11 +2,16 @@ import csv
 import hashlib
 
 from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth import forms as auth_forms
+from django.contrib.auth import get_user_model
 from django.contrib.auth import views as auth_views
 from django.core.cache import cache
 from django.urls import reverse_lazy
 from django.http import HttpResponse
-from django.shortcuts import redirect, render, resolve_url
+from django.shortcuts import get_object_or_404, redirect, render, resolve_url
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.decorators.http import require_POST
 
 from apps.clientes.models import Cliente
 from apps.contenedores.views import CatalogoView
@@ -14,7 +19,7 @@ from apps.core.mixins import es_personal, personal_requerido
 from apps.cotizaciones.models import Cotizacion, Pedido
 from apps.vendedores.models import Vendedor
 
-from . import reportes
+from . import cuentas, reportes
 
 
 def inicio(request):
@@ -135,39 +140,51 @@ class LoginView(auth_views.LoginView):
     def get_default_redirect_url(self):
         return resolve_url("dashboard" if es_personal(self.request.user) else "catalogo")
 
-    # --- Límite de intentos fallidos (SEG-12) ---
-    def _claves(self):
-        ip = ip_cliente(self.request)
-        usuario = self.request.POST.get("username", "").strip().lower()
-        return (
-            "login:cuenta:" + hashlib.sha256(f"{ip}|{usuario}".encode()).hexdigest(),
-            "login:ip:" + hashlib.sha256(ip.encode()).hexdigest(),
-        )
+    # --- Intentos fallidos (SEG-12) ---
+    # Por cuenta: tras LOGIN_MAX_INTENTOS fallos se bloquea hasta que un administrador la libere.
+    # Por IP: un límite temporal frena a quien prueba muchas cuentas distintas.
+    MSG_BLOQUEADA = (
+        "Tu cuenta está bloqueada por demasiados intentos fallidos. "
+        "Contacta a un administrador de SpaceWise para desbloquearla."
+    )
 
-    def _bloqueado(self):
-        cuenta, ip = self._claves()
-        return cache.get(cuenta, 0) >= settings.LOGIN_MAX_INTENTOS or cache.get(ip, 0) >= settings.LOGIN_MAX_INTENTOS_IP
+    def _clave_ip(self):
+        return "login:ip:" + hashlib.sha256(ip_cliente(self.request).encode()).hexdigest()
+
+    def _rechazar(self, mensaje, status):
+        form = self.get_form()
+        form.errors.clear()  # no se intenta autenticar
+        form.add_error(None, mensaje)
+        return self.render_to_response(self.get_context_data(form=form), status=status)
 
     def post(self, request, *args, **kwargs):
-        if self._bloqueado():
-            form = self.get_form()
-            form.errors.clear()  # no se intenta autenticar mientras dure el bloqueo
-            form.add_error(None, (
-                f"Demasiados intentos fallidos. Espera {settings.LOGIN_BLOQUEO_MINUTOS} minutos "
-                "o recupera tu contraseña con «¿Olvidaste tu contraseña?»."
-            ))
-            return self.render_to_response(self.get_context_data(form=form), status=429)
+        if cache.get(self._clave_ip(), 0) >= settings.LOGIN_MAX_INTENTOS_IP:
+            return self._rechazar(
+                f"Demasiados intentos fallidos desde esta conexión. Espera {settings.LOGIN_BLOQUEO_MINUTOS} minutos.", 429
+            )
+        self.cuenta = cuentas.buscar_usuario(request.POST.get("username"))
+        if self.cuenta is not None and cuentas.esta_bloqueada(self.cuenta):
+            return self._rechazar(self.MSG_BLOQUEADA, 403)
         return super().post(request, *args, **kwargs)
 
     def form_invalid(self, form):
-        for clave in self._claves():
-            cache.add(clave, 0, timeout=settings.LOGIN_BLOQUEO_MINUTOS * 60)
-            cache.incr(clave)
+        clave = self._clave_ip()
+        cache.add(clave, 0, timeout=settings.LOGIN_BLOQUEO_MINUTOS * 60)
+        cache.incr(clave)
+        if self.cuenta is not None and cuentas.registrar_fallo(self.cuenta, ip_cliente(self.request)):
+            form.errors.clear()
+            form.add_error(None, self.MSG_BLOQUEADA)
         return super().form_invalid(form)
 
     def form_valid(self, form):
-        cache.delete(self._claves()[0])
+        cuentas.registrar_exito(form.get_user())
         return super().form_valid(form)
+
+
+class _RecuperarClaveForm(auth_forms.PasswordResetForm):
+    def get_users(self, email):
+        # Una cuenta bloqueada no se libera cambiando la contraseña: la desbloquea un administrador.
+        return (u for u in super().get_users(email) if not cuentas.esta_bloqueada(u))
 
 
 class OlvideClaveView(auth_views.PasswordResetView):
@@ -175,6 +192,7 @@ class OlvideClaveView(auth_views.PasswordResetView):
     exista o no el correo. Máximo 5 solicitudes por hora desde la misma IP."""
 
     template_name = "registration/password_reset_form.html"
+    form_class = _RecuperarClaveForm
     email_template_name = "registration/password_reset_email.txt"
     subject_template_name = "registration/password_reset_subject.txt"
     success_url = reverse_lazy("clave_enviada")
@@ -185,3 +203,33 @@ class OlvideClaveView(auth_views.PasswordResetView):
         if cache.incr(clave) > 5:
             return redirect(self.success_url)  # misma respuesta, pero sin enviar más correos
         return super().form_valid(form)
+
+
+def admin_requerido(view):
+    """Solo administradores (staff o superusuario); los vendedores no desbloquean cuentas."""
+
+    @personal_requerido
+    def envuelta(request, *args, **kwargs):
+        if not (request.user.is_staff or request.user.is_superuser):
+            messages.error(request, "Solo un administrador puede gestionar las cuentas bloqueadas.")
+            return redirect("dashboard")
+        return view(request, *args, **kwargs)
+
+    return envuelta
+
+
+@admin_requerido
+def cuentas_bloqueadas(request):
+    return render(request, "core/cuentas_bloqueadas.html", {"bloqueos": cuentas.cuentas_bloqueadas().order_by("-bloqueada_en")})
+
+
+@admin_requerido
+@require_POST
+def desbloquear_cuenta(request, pk):
+    usuario = get_object_or_404(get_user_model(), pk=pk)
+    if cuentas.desbloquear(usuario, por=request.user):
+        messages.success(request, f"Cuenta «{usuario.get_full_name() or usuario.username}» desbloqueada.")
+    destino = request.POST.get("next", "")
+    if destino and url_has_allowed_host_and_scheme(destino, allowed_hosts={request.get_host()}):
+        return redirect(destino)
+    return redirect("cuentas_bloqueadas")

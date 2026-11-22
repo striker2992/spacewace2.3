@@ -66,6 +66,48 @@ if not conectado:
         print(f"Aviso al sincronizar credenciales: {e}")
 EOF
 
+# Sincronizar tabla de migraciones para core si la tabla ya existe físicamente en MySQL
+python - << 'EOF'
+import os
+import sys
+try:
+    import MySQLdb
+    host = os.environ.get("DB_HOST", "db")
+    port = int(os.environ.get("DB_PORT", "3306"))
+    user = os.environ.get("DB_USER", "spacewise")
+    password = os.environ.get("DB_PASSWORD", "spacewise_secret_pass")
+    db_name = os.environ.get("DB_NAME", "spacewise_db")
+    
+    conn = MySQLdb.connect(host=host, port=port, user=user, passwd=password, db=db_name)
+    cur = conn.cursor()
+    # Verificar si la tabla core_seguridadcuenta existe
+    cur.execute("SHOW TABLES LIKE 'core_seguridadcuenta';")
+    existe_tabla = cur.fetchone()
+    if existe_tabla:
+        # Registrar manualmente la migración en django_migrations para que Django no intente re-crearla
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS django_migrations (
+                id bigint AUTO_INCREMENT NOT NULL PRIMARY KEY,
+                app varchar(255) NOT NULL,
+                name varchar(255) NOT NULL,
+                applied datetime(6) NOT NULL
+            );
+        """)
+        cur.execute("SELECT id FROM django_migrations WHERE app='core' AND name='0001_seguridad_cuentas';")
+        if not cur.fetchone():
+            from datetime import datetime
+            cur.execute(
+                "INSERT INTO django_migrations (app, name, applied) VALUES ('core', '0001_seguridad_cuentas', %s);",
+                (datetime.now(),)
+            )
+            conn.commit()
+            print("Migracion core.0001_seguridad_cuentas sincronizada correctamente en django_migrations.")
+    cur.close()
+    conn.close()
+except Exception as e:
+    print(f"Aviso en comprobacion de django_migrations: {e}")
+EOF
+
 # Aplicar migraciones de la base de datos
 echo "Aplicando migraciones..."
 python manage.py migrate --noinput

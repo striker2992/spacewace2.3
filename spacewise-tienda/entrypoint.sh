@@ -66,9 +66,9 @@ if not conectado:
         print(f"Aviso al sincronizar credenciales: {e}")
 EOF
 
-# Aplicar migraciones de la base de datos
+# Aplicar migraciones de la base de datos (--fake-initial maneja tablas que ya existen como backups importados)
 echo "Aplicando migraciones..."
-python manage.py migrate --noinput
+python manage.py migrate --fake-initial --noinput
 
 # Recolectar archivos estáticos para WhiteNoise
 echo "Recolectando archivos estáticos..."

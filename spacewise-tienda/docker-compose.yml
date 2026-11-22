@@ -39,6 +39,7 @@ services:
       - DB_NAME=${DB_NAME:-spacewise_db}
       - DB_USER=${DB_USER:-spacewise}
       - DB_PASSWORD=${DB_PASSWORD:-spacewise_secret_pass}
+      - DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-root_secret_pass}
       - DB_HOST=db
       - DB_PORT=3306
       - SEED_DATABASE=${SEED_DATABASE:-0}

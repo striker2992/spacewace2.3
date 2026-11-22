@@ -66,9 +66,10 @@ if not conectado:
         print(f"Aviso al sincronizar credenciales: {e}")
 EOF
 
-# Aplicar migraciones de la base de datos (--fake-initial maneja tablas que ya existen como backups importados)
+# Aplicar migraciones de la base de datos
 echo "Aplicando migraciones..."
-python manage.py migrate --fake-initial --noinput
+# Si la tabla ya existe de un backup, fingir la migración inicial de core para evitar error 1050
+python manage.py migrate --fake-initial --noinput || python manage.py migrate core --fake 0001 && python manage.py migrate --noinput
 
 # Recolectar archivos estáticos para WhiteNoise
 echo "Recolectando archivos estáticos..."

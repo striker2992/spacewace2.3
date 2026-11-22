@@ -1,0 +1,66 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: spacewise_db
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-spacewise_db}
+      MYSQL_USER: ${DB_USER:-spacewise}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-spacewise_secret_pass}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_secret_pass}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - spacewise_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-root_secret_pass}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: spacewise_web
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-cambia-esta-clave-secreta-para-produccion}
+      - DJANGO_DEBUG=${DJANGO_DEBUG:-0}
+      - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
+      - DJANGO_HTTPS=${DJANGO_HTTPS:-0}
+      - DJANGO_HTTPS_REDIRIGIR=${DJANGO_HTTPS_REDIRIGIR:-0}
+      - DJANGO_IP_CABECERA=${DJANGO_IP_CABECERA:-X-Real-IP}
+      - DJANGO_SERVIR_MEDIA=${DJANGO_SERVIR_MEDIA:-1}
+      - DB_NAME=${DB_NAME:-spacewise_db}
+      - DB_USER=${DB_USER:-spacewise}
+      - DB_PASSWORD=${DB_PASSWORD:-spacewise_secret_pass}
+      - DB_HOST=db
+      - DB_PORT=3306
+      - SEED_DATABASE=${SEED_DATABASE:-0}
+      - PEDIDOS_NOTIFY_EMAILS=${PEDIDOS_NOTIFY_EMAILS:-}
+      - EMAIL_HOST=${EMAIL_HOST:-}
+      - EMAIL_PORT=${EMAIL_PORT:-}
+      - EMAIL_HOST_USER=${EMAIL_HOST_USER:-}
+      - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD:-}
+      - DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL:-}
+    ports:
+      - "${PUERTO_HTTP:-8000}:8000"
+    volumes:
+      - media_data:/app/media
+    networks:
+      - spacewise_net
+
+volumes:
+  mysql_data:
+    driver: local
+  media_data:
+    driver: local
+
+networks:
+  spacewise_net:
+    driver: bridge

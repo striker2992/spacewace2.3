@@ -60,7 +60,7 @@ def generar_pdf(cot, enlace=None):
     emitida = timezone.localdate()
     marca = [Paragraph("<font color='#2563eb'><b>SpaceWise</b></font>", e["titulo"]),
              Paragraph("Venta y arriendo de contenedores", e["chico"])]
-    logo = settings.BASE_DIR / "static" / "img" / "logo-pdf.png"
+    logo = settings.STATIC_ROOT / "img" / "logo-pdf.png" if hasattr(settings, "STATIC_ROOT") and (settings.STATIC_ROOT / "img" / "logo-pdf.png").exists() else settings.BASE_DIR / "static" / "img" / "logo-pdf.png"
     if logo.exists():
         marca = Table(
             [[Image(str(logo), width=14 * mm, height=14 * mm), marca]],

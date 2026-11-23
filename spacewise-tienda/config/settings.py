@@ -41,7 +41,10 @@ if HTTPS:
     SECURE_HSTS_SECONDS = int(os.environ.get("DJANGO_HSTS_SEGUNDOS", "3600"))
 CSRF_TRUSTED_ORIGINS = [
     o.strip() for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()
-] or [f"https://{h}" for h in ALLOWED_HOSTS if HTTPS and "*" not in h and h not in ("localhost", "127.0.0.1")]
+] or (
+    [f"https://{h}" for h in ALLOWED_HOSTS if "*" not in h] +
+    [f"http://{h}" for h in ALLOWED_HOSTS if "*" not in h and not HTTPS]
+)
 # IP real del visitante detrás del proxy del hosting (límite de intentos de inicio de sesión):
 # - DJANGO_IP_CABECERA: cabecera que pone el hosting con esa IP (PythonAnywhere: X-Real-IP), o
 # - DJANGO_PROXY_SALTOS: cantidad de proxies que agregan su entrada a X-Forwarded-For.

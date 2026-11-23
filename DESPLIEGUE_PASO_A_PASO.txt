@@ -1,0 +1,177 @@
+================================================================================
+GUIA DEFINITIVA DE DESPLIEGUE - SPACEWISE TIENDA EN UBUNTU SERVER 22.04 LTS
+================================================================================
+Arquitectura:
+  - Sistema Operativo: Ubuntu Server 22.04 LTS (IP Local: 192.168.1.100)
+  - Reverse Proxy / Balanceador: Nginx (Puerto 80)
+  - Servidor de Aplicación: Django 5 + Gunicorn 3 workers + WhiteNoise (Docker, Puerto 8000)
+  - Base de Datos: MySQL 8.0 Oficial (Docker, Puerto 3306, volumen persistente)
+  - Red / Túnel: WireGuard VPN compatible
+================================================================================
+
+--------------------------------------------------------------------------------
+FASE 1: PREPARACION DEL SERVIDOR UBUNTU (SOLO LA PRIMERA VEZ)
+--------------------------------------------------------------------------------
+Si el servidor es nuevo o no tiene Docker instalado, ejecutar como usuario con sudo:
+
+sudo apt-get update && sudo apt-get upgrade -y
+sudo apt-get install -y ca-certificates curl gnupg lsb-release git nginx ufw
+
+# Instalar Docker Engine y Docker Compose Plugin oficial
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Permitir a tu usuario ejecutar Docker sin sudo
+sudo usermod -aG docker $USER
+newgrp docker
+
+# Configurar Firewall UFW (Permitir SSH, HTTP y Wireguard)
+sudo ufw allow OpenSSH
+sudo ufw allow 'Nginx Full'
+sudo ufw allow 51820/udp   # WireGuard (si aplica)
+sudo ufw --force enable
+
+
+--------------------------------------------------------------------------------
+FASE 2: DESCARGA DEL CODIGO FUENTE (REPOSITORIO)
+--------------------------------------------------------------------------------
+1. Crear directorio base del proyecto:
+   sudo mkdir -p /opt/spacewace2.3
+   sudo chown -R $USER:$USER /opt/spacewace2.3
+   cd /opt/spacewace2.3
+
+2. Clonar el repositorio (si es primera vez):
+   git clone -b feature/docker-ubuntu-deploy https://github.com/striker2992/spacewace2.3.git .
+
+   *Si ya habías clonado la carpeta previamente, solo actualiza con:*
+   cd /opt/spacewace2.3
+   git fetch origin feature/docker-ubuntu-deploy
+   git reset --hard origin/feature/docker-ubuntu-deploy
+
+
+--------------------------------------------------------------------------------
+FASE 3: CONFIGURACION DE VARIABLES DE ENTORNO (.env)
+--------------------------------------------------------------------------------
+Entrar a la carpeta de la tienda:
+cd /opt/spacewace2.3/spacewise-tienda
+
+Copiar la plantilla de variables de entorno:
+cp .env.docker.example .env
+
+Verificar o editar el archivo .env:
+nano .env
+
+Asegurarse de que contenga valores como:
+--------------------------------------------------------------------------------
+DJANGO_SECRET_KEY=clave-secreta-de-produccion-muy-segura-y-aleatoria-2026
+DJANGO_DEBUG=False
+DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost,192.168.1.100,tu-dominio.com
+
+DB_NAME=spacewise_db
+DB_USER=spacewise
+DB_PASSWORD=spacewise_secret_pass
+DB_ROOT_PASSWORD=root_secret_pass
+DB_HOST=db
+DB_PORT=3306
+
+GUNICORN_WORKERS=3
+GUNICORN_TIMEOUT=120
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+FASE 4: CONSTRUCCION Y PUESTA EN MARCHA DE LOS CONTENEDORES
+--------------------------------------------------------------------------------
+En la carpeta /opt/spacewace2.3/spacewise-tienda ejecutar:
+
+docker compose down
+docker compose up -d --build
+
+Verificar que ambos contenedores estén levantados y saludables:
+docker compose ps
+
+Debe mostrar:
+- spacewise_db   (healthy)
+- spacewise_web  (Up)
+
+
+--------------------------------------------------------------------------------
+FASE 5: (OPCIONAL) RESTAURAR UN DUMP SQL PREVIO
+--------------------------------------------------------------------------------
+Si tienes un archivo de volcado SQL (por ejemplo "completo_utf8.sql") con tus
+datos de contenedores, cotizaciones y clientes previos:
+
+1. Copiar el archivo al servidor (vía scp o sftp a /tmp/completo_utf8.sql).
+2. Restaurarlo directamente dentro del contenedor MySQL:
+   docker compose exec -T db mysql -u spacewise -pspacewise_secret_pass --default-character-set=utf8mb4 spacewise_db < /tmp/completo_utf8.sql
+
+3. Reiniciar el contenedor web para que ejecute la auto-reconciliación de esquema:
+   docker compose restart web
+
+El entrypoint inteligente detectará automáticamente las tablas existentes,
+creará las columnas faltantes (cotizacion_id, token, garantías) y sincronizará
+las migraciones sin errores.
+
+
+--------------------------------------------------------------------------------
+FASE 6: CONFIGURAR NGINX (REVERSE PROXY / BALANCEADOR)
+--------------------------------------------------------------------------------
+Copiar la configuración de Nginx optimizada para SpaceWise:
+
+sudo cp deploy/nginx-spacewise.conf /etc/nginx/sites-available/spacewise.conf
+sudo ln -sf /etc/nginx/sites-available/spacewise.conf /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default
+
+# Probar la sintaxis de Nginx
+sudo nginx -t
+
+# Reiniciar Nginx
+sudo systemctl restart nginx
+sudo systemctl enable nginx
+
+
+--------------------------------------------------------------------------------
+FASE 7: VERIFICACION Y PRUEBAS EN PRODUCCION
+--------------------------------------------------------------------------------
+1. Prueba directa local en el servidor:
+   curl -I http://127.0.0.1:80/
+   curl -I http://127.0.0.1:80/catalogo/
+   curl -I http://127.0.0.1:80/panel/
+
+2. Desde cualquier equipo en la red local o por WireGuard:
+   Abrir en el navegador:
+   👉 Catálogo público:  http://192.168.1.100/catalogo/
+   👉 Panel de control:   http://192.168.1.100/panel/
+   👉 Administración:     http://192.168.1.100/admin/
+
+
+--------------------------------------------------------------------------------
+FASE 8: COMANDOS UTILES DE MANTENIMIENTO
+--------------------------------------------------------------------------------
+1. Ver logs en tiempo real del contenedor web:
+   docker compose logs -f web
+
+2. Ver logs en tiempo real de MySQL:
+   docker compose logs -f db
+
+3. Crear un superusuario de Django (administrador):
+   docker compose exec web python manage.py createsuperuser
+
+4. Hacer un respaldo (Backup) de la base de datos a un archivo SQL:
+   docker compose exec -T db mysqldump -u spacewise -pspacewise_secret_pass --default-character-set=utf8mb4 spacewise_db > /opt/spacewace2.3/backup_$(date +%Y%m%d_%H%M%S).sql
+
+5. Actualizar el proyecto con nuevos cambios de Git:
+   cd /opt/spacewace2.3
+   git pull origin feature/docker-ubuntu-deploy
+   cd spacewise-tienda
+   docker compose up -d --build web
+================================================================================

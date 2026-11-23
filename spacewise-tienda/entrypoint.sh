@@ -66,12 +66,42 @@ if not conectado:
         print(f"Aviso al sincronizar credenciales: {e}")
 EOF
 
-# Aplicar migraciones de la base de datos
-# Como se importó un dump completo de MySQL que ya tiene la estructura de tablas y datos creada,
-# primero fingimos (--fake) todas las migraciones para sincronizar django_migrations sin alterar tablas existentes,
-# y luego ejecutamos migrate por si existiera alguna migración nueva pendiente.
+# Sincronizar y aplicar migraciones de la base de datos
+# 1. Agrega columnas faltantes de migraciones recientes (como cotizaciones.0006_enlace_publico: token)
+python - << 'EOF'
+import os
+import secrets
+try:
+    import MySQLdb
+    host = os.environ.get("DB_HOST", "db")
+    port = int(os.environ.get("DB_PORT", "3306"))
+    user = os.environ.get("DB_USER", "spacewise")
+    password = os.environ.get("DB_PASSWORD", "spacewise_secret_pass")
+    db_name = os.environ.get("DB_NAME", "spacewise_db")
+
+    conn = MySQLdb.connect(host=host, port=port, user=user, passwd=password, db=db_name)
+    cur = conn.cursor()
+    # Verificar si la columna 'token' existe en cotizaciones_cotizacion
+    cur.execute("SHOW COLUMNS FROM `cotizaciones_cotizacion` LIKE 'token';")
+    if not cur.fetchone():
+        print("Agregando columna 'token' a cotizaciones_cotizacion...")
+        cur.execute("ALTER TABLE `cotizaciones_cotizacion` ADD COLUMN `token` varchar(32) NULL UNIQUE;")
+        # Poblar tokens para cotizaciones existentes
+        cur.execute("SELECT id FROM `cotizaciones_cotizacion` WHERE `token` IS NULL;")
+        ids = [row[0] for row in cur.fetchall()]
+        for cid in ids:
+            t = secrets.token_urlsafe(16)[:32]
+            cur.execute("UPDATE `cotizaciones_cotizacion` SET `token`=%s WHERE id=%s;", (t, cid))
+        conn.commit()
+        print("Columna 'token' y enlaces publicos generados exitosamente.")
+    cur.close()
+    conn.close()
+except Exception as e:
+    print(f"Aviso en actualizacion de columnas: {e}")
+EOF
+
 echo "Sincronizando estado de migraciones..."
-python manage.py migrate --fake --noinput || true
+python manage.py migrate --fake-initial --noinput || true
 python manage.py migrate --noinput || true
 
 # Recolectar archivos estáticos para WhiteNoise

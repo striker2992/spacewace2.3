@@ -1,6 +1,6 @@
 """Lógica del carrito: un carrito por usuario autenticado, o uno anónimo ligado a la sesión."""
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 
 from .models import Carrito, ItemCarrito
 
@@ -44,9 +44,12 @@ def agregar_item(carrito, contenedor, cantidad=1):
         raise CarritoError("Este contenedor está sin stock.")
     aviso = None
     with transaction.atomic():
-        item, _ = ItemCarrito.objects.select_for_update().get_or_create(
-            carrito=carrito, contenedor=contenedor, defaults={"cantidad": 0}
-        )
+        try:
+            item, _ = ItemCarrito.objects.select_for_update().get_or_create(
+                carrito=carrito, contenedor=contenedor, defaults={"cantidad": 0}
+            )
+        except IntegrityError:
+            item = ItemCarrito.objects.select_for_update().get(carrito=carrito, contenedor=contenedor)
         nueva = item.cantidad + cantidad
         limite = _limite(contenedor)
         if nueva > limite:

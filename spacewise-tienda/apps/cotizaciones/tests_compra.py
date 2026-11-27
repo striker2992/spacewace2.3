@@ -122,3 +122,30 @@ class CompraDesdeCotizacionTests(TestCase):
         resp = self.client.get(reverse("vendedores:detalle_pedido", args=[pedido.pk]))
         self.assertContains(resp, "Transporte")
         self.assertContains(resp, self.cot.numero)
+
+    def test_bloquear_stock_contenedor_inexistente_lanza_pedido_error(self):
+        from .servicios import _bloquear_stock
+
+        class LineaMock:
+            contenedor_id = 999999
+            cantidad = 1
+
+        with self.assertRaises(PedidoError) as ctx:
+            _bloquear_stock([LineaMock()])
+        self.assertIn("ya no está disponible", str(ctx.exception))
+
+    def test_cancelacion_pedido_restituye_stock_una_sola_vez(self):
+        self.comprar()
+        self.contenedor.refresh_from_db()
+        self.assertEqual(self.contenedor.stock, 3)
+
+        pedido = Pedido.objects.get()
+        cambiar_estado_pedido(pedido, Pedido.Estado.CANCELADO)
+        self.contenedor.refresh_from_db()
+        self.assertEqual(self.contenedor.stock, 5)
+
+        # Si se volviera a invocar en cancelado, rechaza la transición o no vuelve a sumar
+        with self.assertRaises(PedidoError):
+            cambiar_estado_pedido(pedido, Pedido.Estado.CANCELADO)
+        self.contenedor.refresh_from_db()
+        self.assertEqual(self.contenedor.stock, 5)

@@ -1,5 +1,7 @@
 """Reglas de negocio de pedidos: confirmar compra, cambiar estado y avisar por correo."""
 
+from decimal import Decimal
+
 from django.conf import settings
 from django.core.mail import send_mail
 from django.db import transaction
@@ -31,14 +33,18 @@ def crear_pedido(carrito, cliente, datos):
             raise PedidoError("Tu carrito está vacío.")
         bloqueados = _bloquear_stock(items)
         pedido = _nuevo_pedido(cliente, datos)
-        total = 0
+        total = Decimal("0.00")
         for item in items:
             c = bloqueados[item.contenedor_id]
             ItemPedido.objects.create(
                 pedido=pedido, contenedor=c, cantidad=item.cantidad, precio_unitario=c.precio
             )
             total += item.cantidad * c.precio
-            Contenedor.objects.filter(pk=c.pk).update(stock=F("stock") - item.cantidad)
+            filas_afectadas = Contenedor.objects.filter(pk=c.pk, stock__gte=item.cantidad).update(
+                stock=F("stock") - item.cantidad
+            )
+            if filas_afectadas == 0:
+                raise PedidoError(f"No fue posible descontar el inventario de «{c.nombre}». Por favor intenta de nuevo.")
         pedido.total = total
         pedido.save(update_fields=["total"])
         carrito.items.all().delete()
@@ -72,13 +78,16 @@ def comprar_cotizacion(cotizacion, cliente, datos):
 
         pedido = _nuevo_pedido(cliente, datos, cotizacion=cot)
         for item in items:
+            c = bloqueados[item.contenedor_id]
             ItemPedido.objects.create(
                 pedido=pedido, contenedor_id=item.contenedor_id, cantidad=item.cantidad,
                 precio_unitario=item.precio_unitario,
             )
-            Contenedor.objects.filter(pk=bloqueados[item.contenedor_id].pk).update(
+            filas_afectadas = Contenedor.objects.filter(pk=c.pk, stock__gte=item.cantidad).update(
                 stock=F("stock") - item.cantidad
             )
+            if filas_afectadas == 0:
+                raise PedidoError(f"No fue posible descontar el inventario de «{c.nombre}».")
         for s in servicios:
             ServicioPedido.objects.create(
                 pedido=pedido, servicio_id=s.servicio_id, cantidad=s.cantidad, precio_unitario=s.precio_unitario
@@ -101,18 +110,24 @@ def _bloquear_stock(lineas):
     """Bloquea los contenedores de `lineas` (con contenedor_id y cantidad) y revalida su stock.
 
     Otro cliente pudo comprar mientras tanto, así que se revisa dentro de la transacción.
+    Protegido contra KeyError si un contenedor fue eliminado del catálogo.
     """
+    ids_contenedores = [l.contenedor_id for l in lineas]
     bloqueados = {
         c.pk: c
-        for c in Contenedor.objects.select_for_update().filter(pk__in=[l.contenedor_id for l in lineas])
+        for c in Contenedor.objects.select_for_update().filter(pk__in=ids_contenedores)
     }
     problemas = []
     for linea in lineas:
-        c = bloqueados[linea.contenedor_id]
+        c = bloqueados.get(linea.contenedor_id)
+        if c is None:
+            problemas.append("Uno de los contenedores de tu pedido ya no está disponible en el catálogo.")
+            continue
         vendible = c.activo and c.estado == Contenedor.Estado.DISPONIBLE
         if not vendible or c.stock < linea.cantidad:
+            disponible_txt = f"{c.stock} unidad(es)" if (vendible and c.stock > 0) else "agotado"
             problemas.append(
-                f"«{c.nombre}»: pediste {linea.cantidad} y hay {c.stock if vendible else 0} disponible(s)."
+                f"«{c.nombre}»: pediste {linea.cantidad} y hay {disponible_txt} disponible(s)."
             )
     if problemas:
         raise PedidoError("Cambió la disponibilidad de algunos contenedores. " + " ".join(problemas))
@@ -123,10 +138,10 @@ def _nuevo_pedido(cliente, datos, cotizacion=None):
     return Pedido.objects.create(
         cliente=cliente,
         cotizacion=cotizacion,
-        direccion_entrega=datos["direccion_entrega"],
-        telefono_contacto=datos["telefono_contacto"],
+        direccion_entrega=datos["direccion_entrega"].strip(),
+        telefono_contacto=datos["telefono_contacto"].strip(),
         metodo_contacto=datos["metodo_contacto"],
-        notas=datos.get("notas", ""),
+        notas=datos.get("notas", "").strip(),
     )
 
 
@@ -143,7 +158,7 @@ def cambiar_estado_pedido(pedido, nuevo_estado):
             raise PedidoError(
                 f"No se puede pasar un pedido de «{actual.get_estado_display()}» a «{nuevo.label}»."
             )
-        if nuevo == Pedido.Estado.CANCELADO:
+        if nuevo == Pedido.Estado.CANCELADO and actual.estado != Pedido.Estado.CANCELADO:
             for item in actual.items.all():
                 Contenedor.objects.filter(pk=item.contenedor_id).update(
                     stock=F("stock") + item.cantidad
@@ -159,33 +174,39 @@ def cambiar_estado_pedido(pedido, nuevo_estado):
 # Notificaciones por correo (consola en desarrollo; ver EMAIL_BACKEND en settings)
 # ---------------------------------------------------------------------------
 def notificar_pedido_nuevo(pedido):
-    destinatarios = settings.PEDIDOS_NOTIFY_EMAILS
+    destinatarios = getattr(settings, "PEDIDOS_NOTIFY_EMAILS", [])
     if not destinatarios:
         return
-    send_mail(
-        subject=f"Nuevo pedido {pedido.numero_pedido}",
-        message=(
-            f"Cliente: {pedido.cliente}\nTotal: ${pedido.total:,.0f}\n"
-            f"Contacto preferido: {pedido.get_metodo_contacto_display()} ({pedido.telefono_contacto})\n"
-            f"Entrega: {pedido.direccion_entrega}"
-        ),
-        from_email=None,
-        recipient_list=destinatarios,
-        fail_silently=True,
-    )
+    try:
+        send_mail(
+            subject=f"Nuevo pedido {pedido.numero_pedido}",
+            message=(
+                f"Cliente: {pedido.cliente}\nTotal: ${pedido.total:,.0f}\n"
+                f"Contacto preferido: {pedido.get_metodo_contacto_display()} ({pedido.telefono_contacto})\n"
+                f"Entrega: {pedido.direccion_entrega}"
+            ),
+            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+            recipient_list=destinatarios,
+            fail_silently=True,
+        )
+    except Exception:
+        pass
 
 
 def notificar_cambio_estado(pedido):
     email = pedido.cliente.email or (pedido.cliente.usuario.email if pedido.cliente.usuario else "")
     if not email:
         return
-    send_mail(
-        subject=f"Tu pedido {pedido.numero_pedido} está {pedido.get_estado_display().lower()}",
-        message=(
-            f"Hola {pedido.cliente.nombre},\n\nTu pedido {pedido.numero_pedido} "
-            f"cambió a: {pedido.get_estado_display()}.\n\nGracias por comprar en SpaceWise."
-        ),
-        from_email=None,
-        recipient_list=[email],
-        fail_silently=True,
-    )
+    try:
+        send_mail(
+            subject=f"Tu pedido {pedido.numero_pedido} está {pedido.get_estado_display().lower()}",
+            message=(
+                f"Hola {pedido.cliente.nombre},\n\nTu pedido {pedido.numero_pedido} "
+                f"cambió a: {pedido.get_estado_display()}.\n\nGracias por comprar en SpaceWise."
+            ),
+            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+            recipient_list=[email],
+            fail_silently=True,
+        )
+    except Exception:
+        pass

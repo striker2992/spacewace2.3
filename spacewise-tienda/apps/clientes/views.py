@@ -2,16 +2,14 @@ from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import redirect
-from django.utils.http import url_has_allowed_host_and_scheme
-from django.views.generic import FormView
 from django.db.models import Q
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
-
-from apps.core.mixins import BorrarMixin, FormularioMixin, PersonalRequeridoMixin, QueryStringMixin, es_personal
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.generic import CreateView, DeleteView, DetailView, FormView, ListView, UpdateView
 
 from apps.core.cuentas import esta_bloqueada
+from apps.core.mixins import BorrarMixin, FormularioMixin, PersonalRequeridoMixin, QueryStringMixin, es_personal
 
 from .forms import ClienteForm, PerfilForm, RegistroForm
 from .models import Cliente

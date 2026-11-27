@@ -2,8 +2,6 @@
 
 from django.db import transaction
 
-from apps.contenedores.models import Contenedor
-
 from .models import Carrito, ItemCarrito
 
 SESSION_KEY = "carrito_id"

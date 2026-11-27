@@ -7,9 +7,10 @@ from django.contrib.auth import forms as auth_forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth import views as auth_views
 from django.core.cache import cache
-from django.urls import reverse_lazy
-from django.http import HttpResponse
+from django.db import connection
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render, resolve_url
+from django.urls import reverse_lazy
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
@@ -20,6 +21,17 @@ from apps.cotizaciones.models import Cotizacion, Pedido
 from apps.vendedores.models import Vendedor
 
 from . import cuentas, reportes
+
+
+def health_check(request):
+    """Health check endpoint para monitoreo, Docker y Nginx."""
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            cursor.fetchone()
+        return JsonResponse({"status": "ok", "db": "connected"})
+    except Exception as e:
+        return JsonResponse({"status": "error", "db": str(e)}, status=503)
 
 
 def inicio(request):

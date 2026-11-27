@@ -9,10 +9,12 @@ from apps.clientes.views import CambiarClaveView, PerfilView, RegistroView
 from apps.contenedores.views import CatalogoView, ContenedorDetalleView
 from apps.cotizaciones.views_tienda import cotizacion_publica
 from apps.core.views import (
-    LoginView, OlvideClaveView, cuentas_bloqueadas, dashboard, desbloquear_cuenta, inicio, reporte_mensual,
+    LoginView, OlvideClaveView, cuentas_bloqueadas, dashboard, desbloquear_cuenta, health_check, inicio, reporte_mensual,
 )
 
 urlpatterns = [
+    # Health check para Docker, Nginx y monitoreo
+    path("health/", health_check, name="health_check"),
     # Django Admin: no se enlaza desde ninguna pantalla; queda solo para mantenimiento.
     # Su login pasa por el nuestro, que tiene límite de intentos.
     path("admin/login/", RedirectView.as_view(url="/accounts/login/?next=/admin/", query_string=False)),

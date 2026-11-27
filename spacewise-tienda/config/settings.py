@@ -52,6 +52,11 @@ CSRF_TRUSTED_ORIGINS = [
 IP_CABECERA = os.environ.get("DJANGO_IP_CABECERA", "").strip()
 PROXY_SALTOS = int(os.environ.get("DJANGO_PROXY_SALTOS", "0"))
 
+# --- Cabeceras de seguridad HTTP recomendadas por OWASP ---
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+X_FRAME_OPTIONS = "DENY"
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -111,6 +116,8 @@ DATABASES = {
         "OPTIONS": {
             "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
         },
+        "CONN_MAX_AGE": int(os.environ.get("DB_CONN_MAX_AGE", "60")),
+        "CONN_HEALTH_CHECKS": True,
     }
 }
 

@@ -32,4 +32,39 @@
     if (filtro === "rut") valor = valor.toUpperCase();
     if (valor !== campo.value) campo.value = valor;
   });
+
+  // Prevención de doble envío en formularios (anti-double-submit)
+  document.addEventListener("submit", (ev) => {
+    const form = ev.target;
+    if (ev.defaultPrevented) return;
+    if (form.dataset.submitting === "true") {
+      ev.preventDefault();
+      return;
+    }
+    form.dataset.submitting = "true";
+
+    const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
+    if (submitBtn) {
+      submitBtn.dataset.originalContent = submitBtn.tagName === "BUTTON" ? submitBtn.innerHTML : submitBtn.value;
+      submitBtn.disabled = true;
+      if (submitBtn.tagName === "BUTTON") {
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Procesando...';
+      } else {
+        submitBtn.value = "Procesando...";
+      }
+    }
+
+    // Temporizador de seguridad: si la validación HTML5 o backend canceló o tardó, re-habilitar a los 10 segundos
+    setTimeout(() => {
+      form.dataset.submitting = "false";
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        if (submitBtn.tagName === "BUTTON") {
+          submitBtn.innerHTML = submitBtn.dataset.originalContent || "Enviar";
+        } else {
+          submitBtn.value = submitBtn.dataset.originalContent || "Enviar";
+        }
+      }
+    }, 10000);
+  });
 })();

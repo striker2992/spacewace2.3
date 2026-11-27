@@ -101,7 +101,7 @@ docker compose ps
 
 Debe mostrar:
 - spacewise_db   (healthy)
-- spacewise_web  (Up)
+- spacewise_web  (healthy)
 
 
 --------------------------------------------------------------------------------
@@ -174,4 +174,28 @@ FASE 8: COMANDOS UTILES DE MANTENIMIENTO
    git pull origin feature/docker-ubuntu-deploy
    cd spacewise-tienda
    docker compose up -d --build web
+
+
+--------------------------------------------------------------------------------
+FASE 9: AUTOMATIZACION DE BACKUPS DIARIOS (CRON)
+--------------------------------------------------------------------------------
+Se incluye un script automatizado que realiza volcados diarios comprimidos (.sql.gz)
+y rota los respaldos reteniendo únicamente los últimos 7 días.
+
+1. Otorgar permisos de ejecución al script:
+   chmod +x /opt/spacewace2.3/spacewise-tienda/deploy/backup_diario.sh
+
+2. Probar una ejecución manual para verificar que funcione:
+   /opt/spacewace2.3/spacewise-tienda/deploy/backup_diario.sh
+   (Comprobar que se generó el archivo en /opt/spacewace2.3/backups/)
+
+3. Configurar la tarea programada en el crontab del servidor:
+   crontab -e
+
+   Pegar la siguiente línea al final del archivo (se ejecuta todos los días a las 03:00 AM):
+   0 3 * * * /opt/spacewace2.3/spacewise-tienda/deploy/backup_diario.sh >> /var/log/spacewise_backup.log 2>&1
+
+4. ¿Cómo restaurar un respaldo comprimido en caso de emergencia?:
+   gunzip < /opt/spacewace2.3/backups/backup_spacewise_YYYYMMDD_HHMMSS.sql.gz | docker compose exec -T db mysql -u spacewise -pspacewise_secret_pass --default-character-set=utf8mb4 spacewise_db
+   docker compose restart web
 ================================================================================

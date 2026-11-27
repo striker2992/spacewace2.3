@@ -50,6 +50,33 @@ class ValidadoresTests(SimpleTestCase):
         with self.assertRaises(ValidationError):
             v.validar_fecha_no_pasada(hoy - timedelta(days=1))
 
+    def test_texto_multilinea(self):
+        bueno = "Primera línea de notas.\nSegunda línea: detalles del acceso #123."
+        self.assertEqual(v.validar_texto_multilinea(bueno), bueno)
+        for malo in ["<script>alert(1)</script>", "Texto con <b>HTML</b>", "onclick=alert(1)", "$$$", "   "]:
+            with self.subTest(malo), self.assertRaises(ValidationError):
+                v.validar_texto_multilinea(malo)
+
+    def test_validar_imagen_archivo(self):
+        class MockArchivo:
+            def __init__(self, name, size):
+                self.name = name
+                self.size = size
+
+        # Válido
+        ok = MockArchivo("foto.png", 2 * 1024 * 1024)
+        self.assertEqual(v.validar_imagen_archivo(ok), ok)
+
+        # Demasiado grande (> 5MB)
+        grande = MockArchivo("foto.png", 6 * 1024 * 1024)
+        with self.assertRaises(ValidationError):
+            v.validar_imagen_archivo(grande)
+
+        # Extensión no permitida
+        invalido = MockArchivo("script.exe", 1024)
+        with self.assertRaises(ValidationError):
+            v.validar_imagen_archivo(invalido)
+
 
 class FormulariosRechazanDatosInvalidosTests(TestCase):
     @classmethod
@@ -110,6 +137,20 @@ class FormulariosRechazanDatosInvalidosTests(TestCase):
         self.assertIn("cantidad", errores)
         self.assertIn("precio_unitario", errores)
 
+    def test_cotizacion_rechaza_contenedor_duplicado(self):
+        cliente = Cliente.objects.create(nombre="Obras Sur")
+        datos = {
+            "cliente": cliente.pk, "fecha": "2026-10-18", "notas": "",
+            "items-TOTAL_FORMS": "2", "items-INITIAL_FORMS": "0", "items-MIN_NUM_FORMS": "1", "items-MAX_NUM_FORMS": "1000",
+            "items-0-contenedor": self.contenedor.pk, "items-0-cantidad": "1", "items-0-precio_unitario": "1000",
+            "items-1-contenedor": self.contenedor.pk, "items-1-cantidad": "2", "items-1-precio_unitario": "1000",
+            "servicios-TOTAL_FORMS": "0", "servicios-INITIAL_FORMS": "0", "servicios-MIN_NUM_FORMS": "0", "servicios-MAX_NUM_FORMS": "1000",
+        }
+        resp = self.client.post(reverse("cotizaciones:crear"), datos)
+        self.assertEqual(resp.status_code, 200)
+        errores_no_form = resp.context["formset"].non_form_errors()
+        self.assertTrue(any("repetido" in err for err in errores_no_form))
+
 
 class RegistroYCheckoutTests(TestCase):
     def test_registro_rechaza_nombre_con_numeros_y_rut_invalido(self):
@@ -120,3 +161,14 @@ class RegistroYCheckoutTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(set(resp.context["form"].errors), {"first_name", "rut"})
         self.assertFalse(get_user_model().objects.exists())
+
+    def test_checkout_form_rechaza_notas_con_script(self):
+        from apps.cotizaciones.forms import CheckoutForm
+        datos = {
+            "nombre": "Juan Pérez", "rut": "11.111.111-1", "razon_social": "Mi Empresa",
+            "direccion_entrega": "Calle Uno 123", "telefono_contacto": "+56 9 1234 5678",
+            "metodo_contacto": "email", "notas": "<script>alert('xss')</script>"
+        }
+        form = CheckoutForm(datos)
+        self.assertFalse(form.is_valid())
+        self.assertIn("notas", form.errors)

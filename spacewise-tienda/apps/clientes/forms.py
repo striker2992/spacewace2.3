@@ -4,7 +4,14 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.password_validation import validate_password
 from django.db import transaction
 
-from apps.core.validators import ValidacionMixin, validar_nombre_persona, validar_rut, validar_telefono, validar_texto
+from apps.core.validators import (
+    ValidacionMixin,
+    validar_nombre_persona,
+    validar_rut,
+    validar_telefono,
+    validar_texto,
+    validar_texto_multilinea,
+)
 
 from .models import Cliente
 
@@ -41,8 +48,12 @@ class ClienteForm(ValidacionMixin, forms.ModelForm):
     (usuario = correo) o le asigna una contraseña nueva."""
 
     validaciones = {
-        "nombre": validar_texto, "rut": validar_rut, "razon_social": validar_texto,
-        "telefono": validar_telefono, "direccion": validar_texto,
+        "nombre": validar_texto,
+        "rut": validar_rut,
+        "razon_social": validar_texto,
+        "telefono": validar_telefono,
+        "direccion": validar_texto,
+        "informacion_general": validar_texto_multilinea,
     }
     filtros = {"rut": "rut", "telefono": "telefono"}
 
@@ -151,6 +162,13 @@ class RegistroForm(ValidacionMixin, UserCreationForm):
     def clean_email(self):
         return sin_ficha_ajena(correo_disponible(self.cleaned_data["email"]))
 
+    def clean(self):
+        cleaned = super().clean()
+        rut = cleaned.get("rut")
+        if rut and Cliente.objects.filter(rut=rut, usuario__isnull=False).exists():
+            self.add_error("rut", "Ya existe una cuenta registrada con este RUT.")
+        return cleaned
+
     @transaction.atomic
     def save(self, commit=True):
         user = super().save(commit=False)
@@ -210,6 +228,14 @@ class PerfilForm(ValidacionMixin, forms.Form):
     def clean_email(self):
         email = self.cleaned_data["email"]
         return sin_ficha_ajena(correo_disponible(email, excepto=self.user)) if email else ""
+
+    def clean(self):
+        cleaned = super().clean()
+        rut = cleaned.get("rut")
+        if rut and self.es_cliente:
+            if Cliente.objects.filter(rut=rut, usuario__isnull=False).exclude(usuario=self.user).exists():
+                self.add_error("rut", "Este RUT ya está asociado a otra cuenta de usuario.")
+        return cleaned
 
     @transaction.atomic
     def save(self):

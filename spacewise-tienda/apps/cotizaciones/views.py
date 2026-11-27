@@ -125,6 +125,15 @@ def cotizacion_estado(request, pk):
         messages.error(request, f"{cot.numero} ya se compró ({cot.pedido_vigente.numero_pedido}); su estado no se puede cambiar.")
         return redirect(cot)
 
+    if nuevo == Cotizacion.Estado.APROBADA:
+        if not cot.items.exists():
+            messages.error(request, f"{cot.numero} no tiene contenedores; agrega al menos un ítem antes de aprobar.")
+            return redirect(cot)
+        for item in cot.items.all():
+            if item.precio_unitario is None or item.precio_unitario <= 0:
+                messages.error(request, f"«{item.contenedor.nombre}» debe tener un precio valorizado mayor a cero antes de aprobar.")
+                return redirect(cot)
+
     cot.estado = nuevo
     cot.save(update_fields=["estado"])
     messages.success(request, f"Cotización {cot.numero}: {cot.get_estado_display().lower()}.")

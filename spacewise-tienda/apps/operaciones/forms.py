@@ -1,6 +1,6 @@
 from django import forms
 
-from apps.core.validators import ValidacionMixin, configurar_campos
+from apps.core.validators import ValidacionMixin, configurar_campos, validar_texto_multilinea
 
 from .models import Garantia
 
@@ -8,9 +8,17 @@ from .models import Garantia
 class SolicitudGarantiaForm(ValidacionMixin, forms.Form):
     """El cliente indica el motivo y cuántos contenedores de cada línea del pedido están afectados."""
 
+    validaciones = {"motivo": validar_texto_multilinea}
+
     motivo = forms.CharField(
-        label="¿Qué problema presenta?", min_length=10, max_length=1000,
-        widget=forms.Textarea(attrs={"rows": 4, "placeholder": "Ej.: filtración de agua en el techo del contenedor"}),
+        label="¿Qué problema presenta?",
+        min_length=10,
+        max_length=1000,
+        widget=forms.Textarea(attrs={
+            "rows": 4,
+            "maxlength": "1000",
+            "placeholder": "Ej.: filtración de agua en el techo del contenedor",
+        }),
     )
 
     def __init__(self, *args, pedido, **kwargs):
@@ -42,12 +50,21 @@ class SolicitudGarantiaForm(ValidacionMixin, forms.Form):
         return [(item, self.cleaned_data.get(self._campo(item)) or 0) for item in self.items]
 
 
-class ResolverGarantiaForm(forms.Form):
+class ResolverGarantiaForm(ValidacionMixin, forms.Form):
+    validaciones = {"resolucion": validar_texto_multilinea}
+
     estado = forms.ChoiceField(
-        label="Decisión", widget=forms.RadioSelect,
+        label="Decisión",
+        widget=forms.RadioSelect,
         choices=[(Garantia.Estado.APROBADA, "Aprobar"), (Garantia.Estado.RECHAZADA, "Rechazar")],
     )
     resolucion = forms.CharField(
-        label="Resolución para el cliente", min_length=10, max_length=1000,
-        widget=forms.Textarea(attrs={"rows": 4, "placeholder": "Ej.: se coordinará una visita técnica el lunes"}),
+        label="Resolución para el cliente",
+        min_length=10,
+        max_length=1000,
+        widget=forms.Textarea(attrs={
+            "rows": 4,
+            "maxlength": "1000",
+            "placeholder": "Ej.: se coordinará una visita técnica el lunes",
+        }),
     )

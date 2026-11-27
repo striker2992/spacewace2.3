@@ -32,8 +32,8 @@ class Cotizacion(models.Model):
         blank=True,
         related_name="cotizaciones",
     )
-    estado = models.CharField(max_length=10, choices=Estado.choices, default=Estado.PENDIENTE)
-    fecha = models.DateField(default=timezone.localdate)
+    estado = models.CharField(max_length=10, choices=Estado.choices, default=Estado.PENDIENTE, db_index=True)
+    fecha = models.DateField(default=timezone.localdate, db_index=True)
     notas = models.TextField(blank=True)
     origen = models.CharField(max_length=10, choices=Origen.choices, default=Origen.EQUIPO)
     fecha_requerida = models.DateField("¿Para cuándo lo necesitas?", null=True, blank=True)
@@ -215,7 +215,7 @@ class Pedido(models.Model):
     cotizacion = models.ForeignKey(
         Cotizacion, on_delete=models.PROTECT, null=True, blank=True, editable=False, related_name="pedidos"
     )
-    estado = models.CharField(max_length=12, choices=Estado.choices, default=Estado.PENDIENTE)
+    estado = models.CharField(max_length=12, choices=Estado.choices, default=Estado.PENDIENTE, db_index=True)
     total = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     # Datos de entrega y contacto tal como el cliente los confirmó en el checkout
     # (se copian al pedido para que no cambien si luego edita su perfil).
@@ -225,7 +225,7 @@ class Pedido(models.Model):
         "Forma de contacto", max_length=10, choices=MetodoContacto.choices, default=MetodoContacto.EMAIL
     )
     notas = models.TextField("Notas del cliente", blank=True)
-    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True, db_index=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
 
     class Meta:

@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.utils import timezone
+from django.utils.html import escape
 
 # Si reportlab no está instalado, el resto del sitio sigue funcionando y solo el PDF avisa del problema.
 try:
@@ -86,16 +87,16 @@ def generar_pdf(cot, enlace=None):
 
     # Cliente
     c = cot.cliente
-    datos_cliente = [f"<b>{c.nombre}</b>"]
+    datos_cliente = [f"<b>{escape(c.nombre)}</b>"]
     if c.razon_social:
-        datos_cliente.append(c.razon_social)
-    datos_cliente.append("RUT: " + (c.rut or "—"))
-    contacto = " · ".join(x for x in [c.email, c.telefono] if x)
+        datos_cliente.append(escape(c.razon_social))
+    datos_cliente.append("RUT: " + escape(c.rut or "—"))
+    contacto = " · ".join(escape(x) for x in [c.email, c.telefono] if x)
     if contacto:
         datos_cliente.append(contacto)
     entrega = cot.direccion_entrega or c.direccion
     if entrega:
-        datos_cliente.append(f"Entrega: {entrega}")
+        datos_cliente.append(f"Entrega: {escape(entrega)}")
     if cot.fecha_requerida:
         datos_cliente.append(f"Fecha requerida: {cot.fecha_requerida:%d/%m/%Y}")
     partes += [Paragraph("Cliente", e["seccion"]), Paragraph("<br/>".join(datos_cliente), e["normal"])]
@@ -104,13 +105,13 @@ def generar_pdf(cot, enlace=None):
     filas = [["Descripción", "Cant.", "Precio unit.", "Subtotal"]]
     for i in cot.items.all():
         filas.append([
-            Paragraph(f"{i.contenedor.nombre}<br/><font size=8 color='#6b7280'>{i.contenedor.get_tipo_display()} · "
+            Paragraph(f"{escape(i.contenedor.nombre)}<br/><font size=8 color='#6b7280'>{i.contenedor.get_tipo_display()} · "
                       f"{i.contenedor.get_condicion_display()}</font>", e["normal"]),
             i.cantidad, pesos(i.precio_unitario), pesos(i.subtotal),
         ])
     for s in cot.servicios.all():
         filas.append([
-            Paragraph(f"{s.servicio.nombre}<br/><font size=8 color='#6b7280'>Servicio · por {s.servicio.unidad}</font>",
+            Paragraph(f"{escape(s.servicio.nombre)}<br/><font size=8 color='#6b7280'>Servicio · por {s.servicio.unidad}</font>",
                       e["normal"]),
             s.cantidad, pesos(s.precio_unitario), pesos(s.subtotal),
         ])
@@ -134,7 +135,7 @@ def generar_pdf(cot, enlace=None):
 
     if cot.notas:
         partes += [Paragraph("Observaciones", e["seccion"]),
-                   Paragraph(cot.notas.replace("\n", "<br/>"), e["normal"])]
+                   Paragraph(escape(cot.notas).replace("\n", "<br/>"), e["normal"])]
 
     # Condiciones
     vence = cot.fecha + timedelta(days=VALIDEZ_DIAS)

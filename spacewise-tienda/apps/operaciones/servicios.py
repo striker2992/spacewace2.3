@@ -1,5 +1,8 @@
 """Reglas de negocio de garantías: solicitar (cliente) y resolver (equipo interno)."""
 
+import logging
+
+from django.conf import settings
 from django.core.mail import send_mail
 from django.db import transaction
 from django.utils import timezone
@@ -7,6 +10,8 @@ from django.utils import timezone
 from apps.cotizaciones.models import Pedido
 
 from .models import DetalleGarantia, Garantia
+
+logger = logging.getLogger(__name__)
 
 
 class GarantiaError(Exception):
@@ -56,14 +61,17 @@ def notificar_resolucion(garantia):
     email = cliente.email or (cliente.usuario.email if cliente.usuario else "")
     if not email:
         return
-    send_mail(
-        subject=f"Tu garantía {garantia.numero} fue {garantia.get_estado_display().lower()}",
-        message=(
-            f"Hola {cliente.nombre},\n\nRevisamos tu solicitud de garantía {garantia.numero} "
-            f"del pedido {garantia.pedido.numero_pedido}.\n\nResultado: {garantia.get_estado_display()}\n"
-            f"{garantia.resolucion}\n\nSpaceWise"
-        ),
-        from_email=None,
-        recipient_list=[email],
-        fail_silently=True,
-    )
+    try:
+        send_mail(
+            subject=f"Tu garantía {garantia.numero} fue {garantia.get_estado_display().lower()}",
+            message=(
+                f"Hola {cliente.nombre},\n\nRevisamos tu solicitud de garantía {garantia.numero} "
+                f"del pedido {garantia.pedido.numero_pedido}.\n\nResultado: {garantia.get_estado_display()}\n"
+                f"{garantia.resolucion}\n\nSpaceWise"
+            ),
+            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+            recipient_list=[email],
+            fail_silently=False,
+        )
+    except Exception as exc:
+        logger.error("Error al notificar resolucion de garantia %s: %s", garantia.numero, exc, exc_info=True)

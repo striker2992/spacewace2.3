@@ -242,6 +242,8 @@ def desbloquear_cuenta(request, pk):
     if cuentas.desbloquear(usuario, por=request.user):
         messages.success(request, f"Cuenta «{usuario.get_full_name() or usuario.username}» desbloqueada.")
     destino = request.POST.get("next", "")
-    if destino and url_has_allowed_host_and_scheme(destino, allowed_hosts={request.get_host()}):
+    if destino and url_has_allowed_host_and_scheme(
+        destino, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
         return redirect(destino)
     return redirect("cuentas_bloqueadas")

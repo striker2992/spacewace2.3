@@ -1,5 +1,6 @@
 """Reglas de negocio de pedidos: confirmar compra, cambiar estado y avisar por correo."""
 
+import logging
 from decimal import Decimal
 
 from django.conf import settings
@@ -10,6 +11,8 @@ from django.db.models import F
 from apps.contenedores.models import Contenedor
 
 from .models import Cotizacion, ItemPedido, Pedido, ServicioPedido
+
+logger = logging.getLogger(__name__)
 
 
 class PedidoError(Exception):
@@ -187,10 +190,10 @@ def notificar_pedido_nuevo(pedido):
             ),
             from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
             recipient_list=destinatarios,
-            fail_silently=True,
+            fail_silently=False,
         )
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.error("Error al notificar nuevo pedido %s: %s", pedido.numero_pedido, exc, exc_info=True)
 
 
 def notificar_cambio_estado(pedido):
@@ -206,7 +209,7 @@ def notificar_cambio_estado(pedido):
             ),
             from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
             recipient_list=[email],
-            fail_silently=True,
+            fail_silently=False,
         )
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.error("Error al notificar cambio de estado en pedido %s: %s", pedido.numero_pedido, exc, exc_info=True)

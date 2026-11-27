@@ -148,8 +148,8 @@ EOF
 
 # Sincronizar y aplicar migraciones de la base de datos
 echo "Sincronizando estado de migraciones..."
-python manage.py migrate --fake-initial --noinput || true
-python manage.py migrate --noinput || python manage.py migrate --fake --noinput || true
+python manage.py migrate --fake-initial --noinput
+python manage.py migrate --noinput
 
 # Recolectar archivos estáticos para WhiteNoise
 echo "Recolectando archivos estáticos..."

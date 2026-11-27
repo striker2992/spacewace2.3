@@ -14,13 +14,13 @@ class Garantia(models.Model):
 
     pedido = models.ForeignKey("cotizaciones.Pedido", on_delete=models.PROTECT, related_name="garantias")
     motivo = models.TextField("Motivo", max_length=1000)
-    estado = models.CharField(max_length=10, choices=Estado.choices, default=Estado.PENDIENTE)
+    estado = models.CharField(max_length=10, choices=Estado.choices, default=Estado.PENDIENTE, db_index=True)
     resolucion = models.TextField("Resolución", max_length=1000, blank=True)
     resuelta_por = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
         related_name="garantias_resueltas",
     )
-    fecha_solicitud = models.DateTimeField(auto_now_add=True)
+    fecha_solicitud = models.DateTimeField(auto_now_add=True, db_index=True)
     fecha_resolucion = models.DateTimeField(null=True, blank=True)
 
     class Meta:
